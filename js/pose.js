@@ -5,7 +5,7 @@ const Pose=(()=>{
   const RIG={w:240,h:330,ox:-20,oy:-40,tr:1};               // canvas frame for rig parts (body coords)
   const J={rS:[150,108],rE:[157,146],lS:[50,108],lE:[43,146]}; // joints
   const pct=(x,y)=>((x-RIG.ox)/RIG.w*100)+'% '+((y-RIG.oy)/RIG.h*100)+'%';
-  const REST={rU:0,rF:0,lU:0,lF:0,lean:0,ty:0,sc:1};
+  const REST0={rU:0,rF:0,lU:0,lF:0,lean:0,ty:0,sc:1};let REST={...REST0};
   const THREAT={rU:-118,rF:-70,lU:58,lF:118,lean:-2,ty:-2,sc:1.03};
   let el={},cur={...REST},strike=null,queue=[],t=0,face=null,on=false,settled=false;
 
@@ -56,6 +56,8 @@ const Pose=(()=>{
     el.lU.style.transform=`rotate(${cur.lU.toFixed(2)}deg)`;el.lF.style.transform=`rotate(${cur.lF.toFixed(2)}deg)`;
     el.foe.style.transform=(cur.lean||cur.ty||cur.sc!==1)?`translateY(${cur.ty.toFixed(2)}px) rotate(${cur.lean.toFixed(2)}deg) scale(${cur.sc.toFixed(3)})`:'';
     el.foe.classList.toggle('threat',on||!!strike)}
+  // per-enemy idle stance (e.g. Varro keeps his sword raised in a guard so it's always in view)
+  function setRest(p){REST={...REST0,...(p||{})};cur={...REST};settled=false;if(el.rU)apply()}
   function reset(){strike=null;queue=[];cur={...REST};if(el.rU)apply()}
-  return{build,setFace,tick,strike:doStrike,reset,get busy(){return !!strike||queue.length>0},get cur(){return cur}};
+  return{build,setFace,tick,strike:doStrike,reset,setRest,get busy(){return !!strike||queue.length>0},get cur(){return cur}};
 })();

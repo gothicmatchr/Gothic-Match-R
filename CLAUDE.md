@@ -77,8 +77,9 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
 - **Slingshot gem** (L/T/cross): pull down and release; free action; pops gems in its path;
   hitting the current armour piece fires that piece's weak bucket ×1.5; no armour = reduced
   body blow. Pushes force gems aside. No gravity. Specials can't destroy each other.
-  Cue: a small "PULL" tag on its top edge (in the gap between gems) and a tug every 3.2 s
-  (orb dips on two bands and springs back inside its cell; only while idle).
+  Drawn as a crossbow (`crossbow()` in game.js: recurve limbs, stock with steel rail, string to the
+  nock). Idle nudge every 3.2 s on your turn: a small crossbow fades in over the gem, draws it down
+  and lets go. No text label. Aiming shows the full crossbow flexing with the pull.
 - Buckets fill from gem dust: the bar rises only as dust lands (`shown[]`; `gauge[]` is the true
   total, 1.5 s catch-up if no dust arrives); fire once the bar is visibly full; tap to fire; each heals 20% of round max HP.
   Shield: also a Ward that blocks the next enemy attack. Coin: also +15 gold.
@@ -106,6 +107,9 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
   special gem (destroying it and gems within radius 2) or, with none, a random bottom-row gem.
 - Enemy turn: enemy snarls, raises the short sword and a clenched fist; strikes chop overhead
   and down across the body, then circle back up.
+  Each blow tears the screen: 2–3 parallel jagged rips (dark inside, crimson torn edges) that shed
+  slivers (`drawShred`). Varro's short sword is serrated (`serrated:1`) and he holds it up in a guard
+  at rest (`rest` pose in FOES, `Pose.setRest`) so it is always in view.
 - Battle log: your actions left, enemy's right. Gothic parchment speech bubbles to the right
   of the enemy's head; each enemy has a distinct voice (Varro blusters to hide fear of death).
 - No score on screen (still counted internally; shown on the defeat screen).

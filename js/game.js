@@ -41,7 +41,7 @@ function buildFoe(e){
   const add=(c,cls)=>{if(cls)c.className=cls;fig.appendChild(c)};
   const baseC=raster(L.base,true);add(baseC,'basec');add(raster(L.fn,false),'fn');add(raster(L.ff,false),'ff');add(raster(L.fa,false),'fa');
   const armC=[];for(const i of[2,3,1]){const c=raster(L.arm[i],true);c.dataset.p=i;add(c,'arm');armC[i]=c}
-  const rig=Pose.build(fig,L);fig.appendChild(rig.lU);fig.appendChild(rig.rU);
+  const rig=Pose.build(fig,L);Pose.setRest(e.rest);fig.appendChild(rig.lU);fig.appendChild(rig.rU);
   {const c=raster(L.arm[0],true);c.dataset.p=0;add(c,'arm');armC[0]=c}
   Scars.attach(baseC,armC,rig);
   const f=$('foe');f.innerHTML='';f.appendChild(fig);
@@ -502,28 +502,39 @@ function slingTick(dt){
     else if(proj.vy>=0||proj.y>innerHeight)return endSling(false);
   }
 }
-function fxTick(dt){for(const k of slacks)k.t+=dt;slacks=slacks.filter(k=>k.t<.45);for(const sl of slashes)sl.t+=dt;slashes=slashes.filter(sl=>sl.t<.5);for(const p of fxp){p.vy+=cell*14*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt}fxp=fxp.filter(p=>p.life>0);for(const r of rings)r.t+=dt;rings=rings.filter(r=>r.t<.5)}
+function fxTick(dt){for(const v of slivers){v.vy+=500*dt;v.x+=v.vx*dt;v.y+=v.vy*dt;v.r+=v.vr*dt;v.life-=dt}slivers=slivers.filter(v=>v.life>0);for(const k of slacks)k.t+=dt;slacks=slacks.filter(k=>k.t<.45);for(const sl of slashes)sl.t+=dt;slashes=slashes.filter(sl=>sl.t<.6);for(const p of fxp){p.vy+=cell*14*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt}fxp=fxp.filter(p=>p.life>0);for(const r of rings)r.t+=dt;rings=rings.filter(r=>r.t<.5)}
+/* enemy blows tear the screen: 2-3 parallel jagged rips (dark inside, crimson torn edges, tapered ends)
+   that open along the cut, shedding slivers as they go */
+let slivers=[];
+function shredShape(sl){if(sl.j)return;sl.n=lowFx?2:sl.w>7?3:2;sl.j=[];for(let i=0;i<sl.n;i++){const a=[];for(let q=0;q<=16;q++)a.push(Math.random());sl.j.push({e:a,o:(i-(sl.n-1)/2)*sl.w*1.9+(Math.random()-.5)*3,l:.75+Math.random()*.25,d:i*.03})}}
+function drawShred(sl){if(sl.t<0)return;shredShape(sl);const ux=Math.cos(sl.a),uy=Math.sin(sl.a),nx=-uy,ny=ux,fade=Math.max(0,1-(sl.t-.14)/.4);
+  for(const tr of sl.j){const k=Math.min(1,Math.max(0,(sl.t-tr.d)/.12));if(k<=0)continue;const L=sl.len*tr.l,sx=sl.x-ux*L/2+nx*tr.o,sy=sl.y-uy*L/2+ny*tr.o,M=16,top=[],bot=[];
+    for(let q=0;q<=M;q++){const u=q/M;if(u>k)break;const hw=sl.w*.85*Math.pow(Math.sin(Math.PI*u),.6)*(.55+.9*tr.e[q]),px=sx+ux*L*u,py=sy+uy*L*u,saw=q%2?.45:1;
+      top.push([px+nx*hw*saw,py+ny*hw*saw]);bot.push([px-nx*hw*(1.45-saw),py-ny*hw*(1.45-saw)])}
+    if(top.length<2)continue;fctx.save();fctx.globalAlpha=fade;fctx.beginPath();fctx.moveTo(top[0][0],top[0][1]);for(const p of top)fctx.lineTo(p[0],p[1]);for(let i=bot.length-1;i>=0;i--)fctx.lineTo(bot[i][0],bot[i][1]);fctx.closePath();
+    fctx.fillStyle='#14050a';fctx.fill();fctx.lineJoin='miter';fctx.strokeStyle='#c8283e';fctx.lineWidth=1.6;fctx.stroke();
+    if(sl.t<.2){fctx.globalAlpha=fade*(1-sl.t/.2);fctx.strokeStyle='#ffd0d0';fctx.lineWidth=1;fctx.beginPath();fctx.moveTo(sx,sy);const e=Math.min(k,1);fctx.lineTo(sx+ux*L*e,sy+uy*L*e);fctx.stroke()}
+    fctx.restore();
+    if(!tr.shed&&k>=1){tr.shed=1;if(!lowFx)for(let i=0;i<5&&slivers.length<60;i++){const u=.15+.7*Math.random(),side=Math.random()<.5?1:-1,v=60+Math.random()*120;
+      slivers.push({x:sx+ux*L*u,y:sy+uy*L*u,vx:nx*side*v+ux*(Math.random()-.5)*60,vy:ny*side*v-40,r:sl.a,vr:(Math.random()-.5)*14,l:4+Math.random()*7,h:1+Math.random()*1.5,c:Math.random()<.5?'#c8283e':'#3a0c14',life:.6+Math.random()*.3})}}}}
 function drawFx(){
-  const any=slacks.length||(drag&&drag.sling)||proj||slashes.length||dust.length||arrow||rings.length||fxp.length;
+  const any=slivers.length||slacks.length||(drag&&drag.sling)||proj||slashes.length||dust.length||arrow||rings.length||fxp.length;
   if(!any&&!fxDrawn)return;fxDrawn=!!any;
   fctx.clearRect(0,0,innerWidth,innerHeight);if(!any)return;fctx.imageSmoothingEnabled=false;
   const br=cv.getBoundingClientRect(),im=sprites[SL];if(!im)return;
   if(drag&&drag.sling){const ox=br.left+(drag.c+.5)*cell,oy=br.top+(drag.r+.5)*cell,gx=ox+drag.px,gy=oy+drag.py,L=Math.hypot(drag.px,drag.py),ok=slingOk(drag);
     if(ok){const ux=-drag.px/L,uy=-drag.py/L,len=(oy-br.top)/Math.max(.2,uy);fctx.save();fctx.setLineDash([4,7]);fctx.lineWidth=3;fctx.strokeStyle='rgba(127,245,225,.9)';
       fctx.beginPath();fctx.moveTo(ox,oy);const al=Math.min(len,N*cell/3);fctx.lineTo(ox+ux*al,oy+uy*al);fctx.stroke();fctx.restore()}
-    fctx.lineWidth=4;fctx.strokeStyle='#c98a4a';fctx.beginPath();fctx.moveTo(ox-cell*.45,oy-cell*.2);fctx.lineTo(gx,gy);fctx.lineTo(ox+cell*.45,oy-cell*.2);fctx.stroke();
-    fctx.fillStyle='#6b3e1e';[[-.45],[.45]].forEach(([d])=>{fctx.beginPath();fctx.arc(ox+cell*d,oy-cell*.2,4,0,Math.PI*2);fctx.fill()});
+    const pl=Math.min(1,L/(cell*2.2)),ang=L>2?Math.atan2(-drag.py,-drag.px):-Math.PI/2;crossbow(fctx,ox,oy-cell*.15,ang,pl,gx,gy,1,1);
     fctx.drawImage(im,gx-cell/2,gy-cell/2,cell,cell)}
   for(const k of slacks){const ox=br.left+(k.c+.5)*cell,oy=br.top+(k.r+.5)*cell,e=Math.exp(-k.t*9)*Math.cos(k.t*34),gx=ox+k.px*e,gy=oy+k.py*e;
-    fctx.globalAlpha=Math.min(1,(.45-k.t)*6);fctx.lineWidth=3;fctx.strokeStyle='#c98a4a';fctx.beginPath();fctx.moveTo(ox-cell*.45,oy-cell*.2);fctx.lineTo(gx,gy);fctx.lineTo(ox+cell*.45,oy-cell*.2);fctx.stroke();fctx.globalAlpha=1}
+    const L=Math.hypot(k.px,k.py),ang=L>2?Math.atan2(-k.py,-k.px):-Math.PI/2;crossbow(fctx,ox,oy-cell*.15,ang,Math.min(1,L/(cell*2.2))*Math.abs(e),gx,gy,1,Math.min(1,(.45-k.t)*6))}
   if(proj){fctx.save();proj.trail.forEach(([x,y],i)=>{const f=i/proj.trail.length;fctx.globalAlpha=f*.8;fctx.fillStyle=i%2?'#ffffff':'#7ff5e1';const z=cell*.42*f;fctx.fillRect(x-z/2,y-z/2,z,z)});fctx.restore();
     const z=cell*1.3*(proj.hit?1+Math.sin(proj.hold*40)*.12:1);
     fctx.save();fctx.translate(proj.x,proj.y);fctx.rotate(proj.spin);if(lowFx)fctx.drawImage(im,-z/2,-z/2,z,z);else{const gs=glowSprite(SL,'#7ff5e1',12),gz=z*(1+2*gs.pad/cell);fctx.drawImage(gs,-gz/2,-gz/2,gz,gz)}fctx.restore();
     if(proj.hit){fctx.save();fctx.globalAlpha=Math.min(1,proj.hold*4);fctx.fillStyle='#fff';fctx.beginPath();fctx.arc(proj.x,proj.y,cell*.9,0,Math.PI*2);fctx.fill();fctx.restore()}}
-  for(const sl of slashes){if(sl.t<0)continue;const k=Math.min(1,sl.t/.12),fade=Math.max(0,1-(sl.t-.12)/.35);
-    const dx=Math.cos(sl.a)*sl.len/2,dy=Math.sin(sl.a)*sl.len/2;fctx.save();fctx.globalAlpha=fade;fctx.lineCap='round';
-    const sp=()=>{fctx.beginPath();fctx.moveTo(sl.x-dx,sl.y-dy);fctx.lineTo(sl.x-dx+2*dx*k,sl.y-dy+2*dy*k)};glowStroke(fctx,'#ff2a3a',sl.w+4,sp,.22);
-    fctx.strokeStyle='#fff3f3';fctx.lineWidth=sl.w*.4;fctx.beginPath();fctx.moveTo(sl.x-dx,sl.y-dy);fctx.lineTo(sl.x-dx+2*dx*k,sl.y-dy+2*dy*k);fctx.stroke();fctx.restore()}
+  for(const sl of slashes)drawShred(sl);
+  for(const v of slivers){fctx.save();fctx.globalAlpha=Math.min(1,v.life*3);fctx.translate(v.x,v.y);fctx.rotate(v.r);fctx.fillStyle=v.c;fctx.beginPath();fctx.moveTo(-v.l/2,0);fctx.lineTo(v.l/2,-v.h);fctx.lineTo(v.l/3,v.h);fctx.closePath();fctx.fill();fctx.restore()}
   for(const p of dust){if(p.delay>0)continue;fctx.globalAlpha=Math.min(1,p.life*2);fctx.fillStyle=p.col;fctx.fillRect(Math.round(p.x-p.s/2),Math.round(p.y-p.s/2),Math.round(p.s),Math.round(p.s))}fctx.globalAlpha=1;
   if(arrow){const ang=Math.atan2(arrow.ty-arrow.sy,arrow.tx-arrow.sx);fctx.save();fctx.translate(arrow.x,arrow.y);fctx.rotate(ang);
     fctx.fillStyle='#6a4a2a';fctx.fillRect(-cell*.9,-1.5,cell*.9,3);fctx.fillStyle='#c9d0d8';fctx.beginPath();fctx.moveTo(4,0);fctx.lineTo(-4,-4);fctx.lineTo(-4,4);fctx.closePath();fctx.fill();
@@ -589,15 +600,26 @@ const slingOnBoard=()=>grid&&grid.some(row=>row.some(g=>g&&g.t===SL));
 function tugK(){if(state!=='idle'||locked)return 0;const t=(performance.now()/1000)%TUG_EVERY;if(t>TUG_LEN)return 0;
   const d=.22;return t<d?Math.sin(t/d*Math.PI/2):Math.exp(-(t-d)*7)*Math.cos((t-d)*14)}
 const slingTugging=()=>tugK()!==0||(performance.now()/1000)%TUG_EVERY<TUG_LEN+.05;
-function slingBands(g,k){if(k<=0)return;const x0=g.x*cell,y0=(g.y+(g.jy||0))*cell,cy=y0+cell*(.5+.09*k);ctx.save();ctx.globalAlpha=Math.min(1,k*1.6);
-  ctx.strokeStyle='#c98a4a';ctx.lineWidth=Math.max(1.5,cell*.045);ctx.beginPath();ctx.moveTo(x0+cell*.1,y0+cell*.14);ctx.lineTo(x0+cell*.3,cy);ctx.moveTo(x0+cell*.9,y0+cell*.14);ctx.lineTo(x0+cell*.7,cy);ctx.stroke();
-  ctx.fillStyle='#6b3e1e';const pr=Math.max(1.5,cell*.045);for(const px of[.1,.9]){ctx.beginPath();ctx.arc(x0+cell*px,y0+cell*.14,pr,0,7);ctx.fill()}ctx.restore()}
-function pullTag(g,k){const fs=Math.max(7,Math.round(cell*.16)),cx=(g.x+.5)*cell;let y=(g.y+(g.jy||0))*cell+cell*.02+Math.max(0,k)*cell*.03;
-  ctx.save();ctx.font='400 '+fs+'px Marcellus,system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-  const w=ctx.measureText('PULL').width+fs*.8,h=fs*1.15;y=Math.max(h/2+1,y);ctx.globalAlpha=state==='idle'&&!locked?1:.45;
-  ctx.fillStyle='#2a0d22';ctx.fillRect(Math.round(cx-w/2),Math.round(y-h/2),Math.round(w),Math.round(h));
-  ctx.strokeStyle='#d4af37';ctx.lineWidth=1;ctx.strokeRect(Math.round(cx-w/2)+.5,Math.round(y-h/2)+.5,Math.round(w)-1,Math.round(h)-1);
-  ctx.fillStyle='#ffd166';ctx.fillText('PULL',cx,y+.5);ctx.restore()}
+/* crossbow: recurve limbs facing the shot, a wooden stock and a string drawn to the nock.
+   ang = direction the bolt will fly; pull 0..1 flexes the limbs; (nx,ny) = where the string meets the gem. */
+function crossbow(c,ox,oy,ang,pull,nx,ny,sc,alpha){const fx=Math.cos(ang),fy=Math.sin(ang),sx=-fy,sy=fx,W=cell*.62*sc*(1-.14*pull),D=cell*(.1+.2*pull)*sc,B=cell*.12*sc;
+  const P=(a,b)=>[ox+sx*a+fx*b,oy+sy*a+fy*b],tl=P(-W,-D),tr=P(W,-D),cl=P(-W*.55,B),cr=P(W*.55,B),mid=P(0,B*.55),hk=cell*.05*sc;
+  c.save();c.globalAlpha*=alpha;c.lineCap='round';c.lineJoin='round';
+  // stock, with a steel rail
+  const s0=P(0,cell*.08*sc),s1=P(0,-cell*1.05*sc);c.strokeStyle='#1a0d08';c.lineWidth=Math.max(4,cell*.13*sc);c.beginPath();c.moveTo(...s0);c.lineTo(...s1);c.stroke();
+  c.strokeStyle='#4a2a14';c.lineWidth=Math.max(2.5,cell*.09*sc);c.stroke();c.strokeStyle='#8a8f96';c.lineWidth=1;c.beginPath();c.moveTo(...P(0,0));c.lineTo(...P(0,-cell*.95*sc));c.stroke();
+  // string
+  c.strokeStyle='#eadfc4';c.lineWidth=Math.max(1,cell*.03*sc);c.beginPath();c.moveTo(...tl);c.lineTo(nx,ny);c.lineTo(...tr);c.stroke();
+  // limbs: dark outline, wood, highlight
+  const limb=()=>{c.beginPath();c.moveTo(...tl);c.quadraticCurveTo(...cl,...mid);c.quadraticCurveTo(...cr,...tr)};
+  c.strokeStyle='#1a0d08';c.lineWidth=Math.max(4,cell*.12*sc);limb();c.stroke();c.strokeStyle='#6b3e1e';c.lineWidth=Math.max(2.5,cell*.075*sc);limb();c.stroke();
+  c.strokeStyle='#b07a44';c.lineWidth=1;limb();c.stroke();
+  // steel tips curling forward, and the latch at the centre
+  c.strokeStyle='#c9d0d8';c.lineWidth=Math.max(1.5,cell*.04*sc);for(const [t,sg] of[[tl,-1],[tr,1]]){c.beginPath();c.moveTo(...t);c.lineTo(t[0]+fx*hk+sx*sg*hk*.4,t[1]+fy*hk+sy*sg*hk*.4);c.stroke()}
+  c.fillStyle='#c9a23a';const m=P(0,B*.4);c.fillRect(Math.round(m[0]-2),Math.round(m[1]-2),4,4);c.restore()}
+// idle nudge: every few seconds a small crossbow fades in over the slingshot gem, draws it down and lets go
+function slingBow(g,k){if(k===0)return;const cx=(g.x+.5)*cell,y0=(g.y+(g.jy||0))*cell,a=Math.min(1,Math.abs(k)*2.2),p=Math.max(0,k);
+  crossbow(ctx,cx,y0+cell*.14,-Math.PI/2,p,cx,y0+cell*(.5+.09*k),.8,a)}
 // force-chain progress: 5 notches along the bottom of each force gem, lit for each perfect link in a row
 function chainPips(g){const x0=g.x*cell,y=(g.y+(g.jy||0))*cell+cell*.86,w=cell*.1,gap=cell*.045,tot=5*w+4*gap,sx=x0+(cell-tot)/2;
   for(let i=0;i<5;i++){ctx.fillStyle=i<chainN?'#ffd166':'rgba(20,10,18,.75)';ctx.fillRect(Math.round(sx+i*(w+gap)),Math.round(y),Math.round(w),Math.max(2,Math.round(cell*.05)))}}
@@ -619,7 +641,7 @@ function draw(){
         ctx.save();m.hit.forEach(k=>{const r=Math.floor(k/N),c=k%N,gd=gold.has(k);ctx.fillStyle=gd?'rgba(255,209,102,.35)':'rgba(255,255,255,.22)';ctx.fillRect(c*cell+1,r*cell+1,cell-2,cell-2);
           glowStroke(ctx,gd?'#ffd166':'#fff',2.5,()=>{ctx.beginPath();ctx.rect(c*cell+3,r*cell+3,cell-6,cell-6)},.18)});ctx.restore()}}}
   for(const p of boxParts){ctx.globalAlpha=Math.min(1,p.life*2);ctx.fillStyle=p.col;const z=Math.max(2,Math.round(p.s*cell));ctx.fillRect(Math.round(p.x*cell-z/2),Math.round(p.y*cell-z/2),z,z)}ctx.globalAlpha=1;
-  let top=null;const tug=tugK(),slings=[];
+  let top=null;const tug=tugK();
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){const g=grid[r][c];if(!g)continue;if(drag&&drag.g===g&&drag.axis){top=g;continue}if(drag&&drag.sling&&drag.g===g)continue;
     if(g.pop&&state==='popping'&&!g.burst&&lt(g)>=0){const l=lt(g),fl=Math.max(0,1-l/.12),a=.55+.45*fl,cx=(g.x+.5)*cell,cy=(g.y+.5)*cell;ctx.save();
       // soft round halo in the gem's colour, fading to nothing (no hard edges)
@@ -633,7 +655,7 @@ function draw(){
     let s=1;if(g.dying!==undefined)s=Math.max(0,1-g.dying/.15);else if(g.pop&&state==='popping')s=g.burst?0:lt(g)<0?1:1.06+.4*Math.max(0,Math.min(1,(popT-burstT(g)+SWELL*pk())/(SWELL*pk())));else if(g.forge!==undefined){const k=(g.forge-.32)/.38;s=k<0?0:k<1?(1-Math.pow(1-k,3))*1.25-.25*Math.max(0,k-.6)/.4*1:1}else if(g.grow!==undefined)s=1+Math.sin(g.grow/.3*Math.PI)*.35;
     if(drag&&!drag.enemy&&drag.g===g&&!drag.axis&&state==='idle')s*=1.18;
     if(g.shrink!==undefined)s*=g.shrink;else if(charge&&charge.g===g&&state==='charging')s*=1+Math.sin(charge.f*40)*.05+charge.f*.15;
-    if(g.t===SL&&s===1&&!g.dark){slingBands(g,tug);slings.push(g)}
+    if(g.t===SL&&s===1&&!g.dark)slingBow(g,tug);
     if(s>0){const q=g.sq||0,w=cell*s*(1+q*.6),h=cell*s*(1-q),yy=(g.y+(g.jy||0)+(g.t===SL&&s===1?tug*.09:0))*cell;const wx=g.wig!==undefined?Math.sin(g.wig*50)*(1-g.wig/.35)*cell*.07:0;ctx.drawImage((g.dark?darkSprites:sprites)[g.t],g.x*cell+(cell-w)/2+wx,yy+cell-h-(cell-cell*s)/2,w,h);if(g.t===SP&&chainN>0&&s===1)chainPips(g)}}
   if(charge){const R1=VR*cell,m=.8*R1+6;
     const cx=Math.min(size-m,Math.max(m,(charge.c+.5)*cell)),cy=Math.min(size-m,Math.max(m,(charge.r+.5)*cell));
@@ -651,7 +673,6 @@ function draw(){
       ctx.strokeStyle=col[1];ctx.lineWidth=4*(1-k)+1;ctx.beginPath();ctx.arc(cx,cy,cell*(.3+k*1.3),0,7);ctx.stroke();
       ctx.translate(cx,cy);ctx.rotate(k*1.2);ctx.fillStyle=col[0];for(let i=0;i<8;i++){ctx.rotate(Math.PI/4);ctx.fillRect(cell*(.35+k*.5),-1.5,cell*.35*(1-k),3)}}
     ctx.restore()}
-  for(const g of slings)pullTag(g,tug);
   if(top){const s=1.15;ctx.drawImage(sprites[top.t],top.x*cell-cell*(s-1)/2,top.y*cell-cell*(s-1)/2,cell*s,cell*s)}
   for(const p of parts){ctx.globalAlpha=Math.min(1,p.life*2);ctx.fillStyle=p.col;const z=p.s*cell;ctx.fillRect(Math.round(p.x*cell-z/2),Math.round(p.y*cell-z/2),Math.round(z),Math.round(z))}ctx.globalAlpha=1;
   ctx.textAlign='center';ctx.font='400 '+Math.round(cell*.36)+'px Marcellus,system-ui,sans-serif';
