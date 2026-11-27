@@ -65,6 +65,8 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
 - **Slingshot gem** (L/T/cross): pull down and release; free action; pops gems in its path;
   hitting the current armour piece fires that piece's weak bucket ×1.5; no armour = reduced
   body blow. Pushes force gems aside. No gravity. Specials can't destroy each other.
+  Cue: a small "PULL" tag on its top edge (in the gap between gems) and a tug every 3.2 s
+  (orb dips on two bands and springs back inside its cell; only while idle).
 - Buckets fill from gem dust; tap to fire; each heals 20% of round max HP.
   Shield: also a Ward that blocks the next enemy attack. Coin: also +15 gold.
   Square: also loads a stacking **Piercing shot** — next slingshot can hit any intact armour

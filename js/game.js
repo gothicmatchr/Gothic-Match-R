@@ -537,11 +537,27 @@ function frame(now){
   else if(state==='sling'&&proj)slingTick(dt);
   else if(state==='popping'){popT+=dt;if(popT>=popEnd())collapse()}else if(state==='falling'&&settled)step();
   fxTick(dt);
-  const busy=boardDirty||!settled||state!=='idle'||drag||charge||hl||floats.length||parts.length||boxParts.length||forges.length||now-lastFull>500;
+  const busy=boardDirty||!settled||(slingOnBoard()&&slingTugging())||state!=='idle'||drag||charge||hl||floats.length||parts.length||boxParts.length||forges.length||now-lastFull>500;
   if(busy){boardDirty=false;if(now-lastFull>500)lastFull=now;draw()}
   drawFx();drawBackdrop(dt);floats=floats.filter(f=>(f.life-=dt)>0);
   perfWatch(dt,busy&&(state!=='idle'||dust.length>0||fxp.length>0));requestAnimationFrame(frame);
 }
+/* slingshot "PULL" cue: a small tag on the gem's own top edge (sits in the gap between gems)
+   and a tug every few seconds, where the orb dips on two bands and springs back inside its cell */
+const TUG_EVERY=3.2,TUG_LEN=.75;
+const slingOnBoard=()=>grid&&grid.some(row=>row.some(g=>g&&g.t===SL));
+function tugK(){if(state!=='idle'||locked)return 0;const t=(performance.now()/1000)%TUG_EVERY;if(t>TUG_LEN)return 0;
+  const d=.22;return t<d?Math.sin(t/d*Math.PI/2):Math.exp(-(t-d)*7)*Math.cos((t-d)*14)}
+const slingTugging=()=>tugK()!==0||(performance.now()/1000)%TUG_EVERY<TUG_LEN+.05;
+function slingBands(g,k){if(k<=0)return;const x0=g.x*cell,y0=(g.y+(g.jy||0))*cell,cy=y0+cell*(.5+.09*k);ctx.save();ctx.globalAlpha=Math.min(1,k*1.6);
+  ctx.strokeStyle='#c98a4a';ctx.lineWidth=Math.max(1.5,cell*.045);ctx.beginPath();ctx.moveTo(x0+cell*.1,y0+cell*.14);ctx.lineTo(x0+cell*.3,cy);ctx.moveTo(x0+cell*.9,y0+cell*.14);ctx.lineTo(x0+cell*.7,cy);ctx.stroke();
+  ctx.fillStyle='#6b3e1e';const pr=Math.max(1.5,cell*.045);for(const px of[.1,.9]){ctx.beginPath();ctx.arc(x0+cell*px,y0+cell*.14,pr,0,7);ctx.fill()}ctx.restore()}
+function pullTag(g,k){const fs=Math.max(7,Math.round(cell*.16)),cx=(g.x+.5)*cell;let y=(g.y+(g.jy||0))*cell+cell*.02+Math.max(0,k)*cell*.03;
+  ctx.save();ctx.font='400 '+fs+'px Marcellus,system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  const w=ctx.measureText('PULL').width+fs*.8,h=fs*1.15;y=Math.max(h/2+1,y);ctx.globalAlpha=state==='idle'&&!locked?1:.45;
+  ctx.fillStyle='#2a0d22';ctx.fillRect(Math.round(cx-w/2),Math.round(y-h/2),Math.round(w),Math.round(h));
+  ctx.strokeStyle='#d4af37';ctx.lineWidth=1;ctx.strokeRect(Math.round(cx-w/2)+.5,Math.round(y-h/2)+.5,Math.round(w)-1,Math.round(h)-1);
+  ctx.fillStyle='#ffd166';ctx.fillText('PULL',cx,y+.5);ctx.restore()}
 function draw(){
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,size,size);
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){ctx.fillStyle=(r+c)%2?'#1a141d':'#221a26';ctx.fillRect(c*cell,r*cell,cell+.5,cell+.5)}
@@ -560,7 +576,7 @@ function draw(){
         ctx.save();m.hit.forEach(k=>{const r=Math.floor(k/N),c=k%N,gd=gold.has(k);ctx.fillStyle=gd?'rgba(255,209,102,.35)':'rgba(255,255,255,.22)';ctx.fillRect(c*cell+1,r*cell+1,cell-2,cell-2);
           glowStroke(ctx,gd?'#ffd166':'#fff',2.5,()=>{ctx.beginPath();ctx.rect(c*cell+3,r*cell+3,cell-6,cell-6)},.18)});ctx.restore()}}}
   for(const p of boxParts){ctx.globalAlpha=Math.min(1,p.life*2);ctx.fillStyle=p.col;const z=Math.max(2,Math.round(p.s*cell));ctx.fillRect(Math.round(p.x*cell-z/2),Math.round(p.y*cell-z/2),z,z)}ctx.globalAlpha=1;
-  let top=null;
+  let top=null;const tug=tugK(),slings=[];
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){const g=grid[r][c];if(!g)continue;if(drag&&drag.g===g&&drag.axis){top=g;continue}if(drag&&drag.sling&&drag.g===g)continue;
     if(g.pop&&state==='popping'&&!g.burst&&lt(g)>=0){const l=lt(g),fl=Math.max(0,1-l/.12),a=.55+.45*fl,cx=(g.x+.5)*cell,cy=(g.y+.5)*cell;ctx.save();
       // soft round halo in the gem's colour, fading to nothing (no hard edges)
@@ -574,7 +590,8 @@ function draw(){
     let s=1;if(g.dying!==undefined)s=Math.max(0,1-g.dying/.15);else if(g.pop&&state==='popping')s=g.burst?0:lt(g)<0?1:1.06+.4*Math.max(0,Math.min(1,(popT-burstT(g)+SWELL*pk())/(SWELL*pk())));else if(g.forge!==undefined){const k=(g.forge-.32)/.38;s=k<0?0:k<1?(1-Math.pow(1-k,3))*1.25-.25*Math.max(0,k-.6)/.4*1:1}else if(g.grow!==undefined)s=1+Math.sin(g.grow/.3*Math.PI)*.35;
     if(drag&&!drag.enemy&&drag.g===g&&!drag.axis&&state==='idle')s*=1.18;
     if(g.shrink!==undefined)s*=g.shrink;else if(charge&&charge.g===g&&state==='charging')s*=1+Math.sin(charge.f*40)*.05+charge.f*.15;
-    if(s>0){const q=g.sq||0,w=cell*s*(1+q*.6),h=cell*s*(1-q),yy=(g.y+(g.jy||0))*cell;ctx.drawImage((g.dark?darkSprites:sprites)[g.t],g.x*cell+(cell-w)/2,yy+cell-h-(cell-cell*s)/2,w,h)}}
+    if(g.t===SL&&s===1&&!g.dark){slingBands(g,tug);slings.push(g)}
+    if(s>0){const q=g.sq||0,w=cell*s*(1+q*.6),h=cell*s*(1-q),yy=(g.y+(g.jy||0)+(g.t===SL&&s===1?tug*.09:0))*cell;ctx.drawImage((g.dark?darkSprites:sprites)[g.t],g.x*cell+(cell-w)/2,yy+cell-h-(cell-cell*s)/2,w,h)}}
   if(charge){const R1=VR*cell,m=.8*R1+6;
     const cx=Math.min(size-m,Math.max(m,(charge.c+.5)*cell)),cy=Math.min(size-m,Math.max(m,(charge.r+.5)*cell));
     const inZone=state==='charging'&&charge.f>=charge.T-PERFECT;
@@ -591,6 +608,7 @@ function draw(){
       ctx.strokeStyle=col[1];ctx.lineWidth=4*(1-k)+1;ctx.beginPath();ctx.arc(cx,cy,cell*(.3+k*1.3),0,7);ctx.stroke();
       ctx.translate(cx,cy);ctx.rotate(k*1.2);ctx.fillStyle=col[0];for(let i=0;i<8;i++){ctx.rotate(Math.PI/4);ctx.fillRect(cell*(.35+k*.5),-1.5,cell*.35*(1-k),3)}}
     ctx.restore()}
+  for(const g of slings)pullTag(g,tug);
   if(top){const s=1.15;ctx.drawImage(sprites[top.t],top.x*cell-cell*(s-1)/2,top.y*cell-cell*(s-1)/2,cell*s,cell*s)}
   for(const p of parts){ctx.globalAlpha=Math.min(1,p.life*2);ctx.fillStyle=p.col;const z=p.s*cell;ctx.fillRect(Math.round(p.x*cell-z/2),Math.round(p.y*cell-z/2),Math.round(z),Math.round(z))}ctx.globalAlpha=1;
   ctx.textAlign='center';ctx.font='400 '+Math.round(cell*.36)+'px Marcellus,system-ui,sans-serif';
