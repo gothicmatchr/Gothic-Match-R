@@ -1,15 +1,15 @@
 --- game.bak.js
 +++ gs_stress/js/game.js
-@@ -180,7 +180,7 @@
-     const slots=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=grid[r][c].t;if(t!==SP&&t!==SL)slots.push([r,c])}const pool=slots.map(([r,c])=>grid[r][c]);
+@@ -191,7 +191,7 @@
+     const slots=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=grid[r][c].t;if(t<SP)slots.push([r,c])}const pool=slots.map(([r,c])=>grid[r][c]);
      let tries=0;do{pool.sort(()=>Math.random()-.5);slots.forEach(([r,c],i)=>grid[r][c]=pool[i]);if(++tries>60)pool.forEach(g=>g.t=rnd())}while((matchesIn(types(),'all').hit.size||!hasMove())&&tries<400);state='falling'}
  }
 -function enemyMove(){
 +function enemyMove(){window.__pt=(window.__pt||0)+1;
-   state='enemy';curseNow=false;cursed=false;renderFoe();toast(foe.name+' makes a move…');shake();buzz(40);
+   turnDmg=0;triumphSaid=false;state='enemy';curseNow=false;cursed=false;renderFoe();toast(foe.name+' makes a move…');shake();buzz(40);
    setTimeout(()=>{
      if(state!=='enemy')return;
-@@ -217,7 +217,7 @@
+@@ -228,7 +228,7 @@
    special:["Pretty bauble. Mine now.","That glitter won't save thee!","Shatter, trinket!"],
    none:["No baubles to break? The floor will do, then.","Nothing worth an arrow... this one, then."]};
  function sayL(t){const b=$('lspeech');b.firstChild.textContent=t;b.classList.remove('on');void b.offsetWidth;b.classList.add('on');clearTimeout(b._h);b._h=setTimeout(()=>b.classList.remove('on'),3000)}
@@ -18,7 +18,7 @@
    state='lackey';say('lackey',true);const L=$('lackey');if(!L.firstChild)L.appendChild(archerArt());
    L.classList.remove('on','shoot');void L.offsetWidth;L.classList.add('on');
    pop('<span style="color:#c8a070">'+LACKEY.name+' the archer!</span><small>Varro summons his lackey</small>','foe');
-@@ -681,3 +681,15 @@
+@@ -762,3 +762,15 @@
      const hl=Math.min(Math.round(roundMax*.2),MAXHP-hp);if(hl>0){hp+=hl;flyIcon(b,$('vbMe'),icons[GREEN],3,renderMe)}
      renderGauges();if(foeHp<=0)win();else if(rageQueued){rageQueued=false;startRage()}}));
  const ro=new ResizeObserver(resize);ro.observe(cv);resize();sizeFx();battle();requestAnimationFrame(frame);

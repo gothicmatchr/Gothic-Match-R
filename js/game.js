@@ -19,7 +19,7 @@ const BOARD_DPR=()=>lowFx?1.5:2,FX_DPR=()=>lowFx?1:1.5,PCAP=()=>lowFx?160:420;
 function resize(){
   const r=cv.getBoundingClientRect();size=r.width;dpr=Math.min(window.devicePixelRatio||1,BOARD_DPR());
   cv.width=Math.round(size*dpr);cv.height=Math.round(size*dpr);cell=size/N;
-  sprites=[0,1,2,3,4,5,6,7].map(t=>gemCanvas(t,Math.round(cell*dpr)));
+  sprites=[0,1,2,3,4,5,6,7,8].map(t=>gemCanvas(t,Math.round(cell*dpr)));
   darkSprites=sprites.map(im=>{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const x=c.getContext('2d');x.filter='brightness(.3) grayscale(.7)';x.drawImage(im,0,0);return c});
   glowSprites={};halos={};boardDirty=true;
 }
@@ -139,18 +139,18 @@ function hurtMe(d,label,backlash){
   pop('<span style="color:#ff4d5e">'+label+' -'+d+'</span>','foe');
 }
 function resolve(gs,bonus,x,y,isMatch,mult,healGreens){mult=mult||1;
-  if(isMatch&&phase==='enemy'){let hits=0,reds=0,greens=0,coins=0;for(const g of gs){if(g.t===SP||g.t===SL)continue;if(g.t===GREEN)greens++;else if(g.t===COIN)coins++;else{hits++;if(g.t===RED)reds++}}
+  if(isMatch&&phase==='enemy'){let hits=0,reds=0,greens=0,coins=0;for(const g of gs){if(g.t>=SP)continue;if(g.t===GREEN)greens++;else if(g.t===COIN)coins++;else{hits++;if(g.t===RED)reds++}}
     if(coins){const st=Math.min(money,Math.round(coins*COIN_GOLD*mult/2));if(st>0){addMoney(-st);pop('<span style="color:#d4af37">'+foe.name.split(' ')[0]+' pockets '+st+' gold</span>','foe')}}
     if(greens){const h=Math.min(greens*3*mult,foe.hp-foeHp);foeHp+=h;if(h)pop('<span style="color:#5fdc7a">'+foe.name.split(' ')[0]+' heals +'+h+'</span>','foe')}
     if(foe.powerAll)power+=(hits+greens+coins)*mult;
     const cm=Math.min(FOE_CHAIN_MAX,Math.max(1,combo));if(hits){hurtMe(hits*foe.hit*mult*cm,foe.name.split(' ')[0]+' strikes!');if(!foe.powerAll)power+=reds}
     renderFoe();return}
   let pts=bonus,reds=0,greens=0,coins=0;const add=Array(TYPES).fill(0);
-  for(const g of gs){const t=g.t;if(t===SP||t===SL)continue;
+  for(const g of gs){const t=g.t;if(t>=SP)continue;
     if(t===RED){reds++;if(!isMatch)pts+=GEMS[RED].pts;continue}
     pts+=GEMS[t].pts;if(t===GREEN)greens++;else add[t]+=GEMS[t].pts;if(t===COIN)coins++}
   pts*=Math.max(1,combo)*mult;
-  const healer=false;let hits=0;for(const g of gs)if(g.t!==RED&&g.t!==SP&&g.t!==SL&&g.t!==COIN&&!(g.t===GREEN&&isMatch&&healer))hits++;
+  const healer=false;let hits=0;for(const g of gs)if(g.t!==RED&&g.t<SP&&g.t!==COIN&&!(g.t===GREEN&&isMatch&&healer))hits++;
   if(coins){const gg=Math.round(coins*COIN_GOLD*mult);addMoney(gg);floats.push({s:'+'+gg+' gold',x,y:y+.45,life:1.3})}
   const cm=isMatch?Math.max(1,combo):1;  // cascade chains multiply damage and bucket fill
   if(hits&&foeHp>0){const dm=hits*DMG*mult*cm;foeHp=Math.max(0,foeHp-Math.round(dm));if(dm>=15)Scars.skin(dm>=27?2:1);const f=$('foe');f.classList.remove('hit');void f.offsetWidth;f.classList.add('hit')}
@@ -171,6 +171,7 @@ function afterTurn(){
   if(hp<=0){const p=piece();if(p===0)return lose();
     armDur[p-1]=foe.arm[p-1][2];hp=MAXHP;renderMe();renderFoe();shake();buzz(150);say('fall',true);
     pop('<span style="color:#ff4d5e">You fall!</span><small>'+foe.name.split(' ')[0]+' straps the '+PIECES[p-1].toLowerCase()+' armour back on. Your HP is restored.</small>','foe')}
+  if(crushQ){const q=crushQ;crushQ=null;return dropCrush(q)}
   if(rageQueued){rageQueued=false;return startRage()}
   if(lackeyQ){lackeyQ=false;return runLackey()}
   if(replay){const r=replay;replay=null;state='replay';
@@ -187,7 +188,7 @@ function afterTurn(){
     if(turns<=0||quiet>=QUIET_MAX){turns=EVERY;quiet=0;renderFoe();return enemyMove()}}
   renderFoe();
   if(!hasMove()){floats.push({s:'Shuffle!',x:N/2,y:N/2,life:1.2});
-    const slots=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=grid[r][c].t;if(t!==SP&&t!==SL)slots.push([r,c])}const pool=slots.map(([r,c])=>grid[r][c]);
+    const slots=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=grid[r][c].t;if(t<SP)slots.push([r,c])}const pool=slots.map(([r,c])=>grid[r][c]);
     let tries=0;do{pool.sort(()=>Math.random()-.5);slots.forEach(([r,c],i)=>grid[r][c]=pool[i]);if(++tries>60)pool.forEach(g=>g.t=rnd())}while((matchesIn(types(),'all').hit.size||!hasMove())&&tries<400);state='falling'}
 }
 function enemyMove(){
@@ -202,12 +203,12 @@ function enemyMove(){
     else{hurtMe(foe.hit*2,foe.name.split(' ')[0]+' lunges!');state='idle';afterTurn()}
   },900);
 }
-let healMode=false,quiet=0,turnDmg=0;
+let healMode=false,quiet=0,turnDmg=0,crushQ=null,crushFall=null,hammer=null;
 function bestEnemyMove(){
   healMode=foeHp<foe.hp*HEAL_BELOW&&Math.random()<HEAL_CHANCE;
   const T0=types();let best=null,bs=0;
   for(const axis of['h','v'])for(let i=0;i<N;i++){const L0=lineOf(T0,axis,i);
-    for(let o=0;o<N;o++){if(L0[o]===SP||L0[o]===SL)continue;const[lo,hi]=span(L0,o,axis);
+    for(let o=0;o<N;o++){if(L0[o]>=SP)continue;const[lo,hi]=span(L0,o,axis);
       for(let t=lo;t<=hi;t++){if(t===o)continue;const T=T0.map(r=>r.slice());setLine(T,axis,i,slide(L0,o,t));
         const cnt={};let n=0;matchesIn(T,'all').hit.forEach(k=>{const v=T[Math.floor(k/N)][k%N];cnt[v]=(cnt[v]||0)+1;n++});
         if(!n)continue;const greens=cnt[GREEN]||0,four=Object.values(cnt).some(v=>v>=4),dbl=Object.keys(cnt).length>=2;
@@ -231,10 +232,10 @@ function runLackey(){
   state='lackey';say('lackey',true);const L=$('lackey');if(!L.firstChild)L.appendChild(archerArt());
   L.classList.remove('on','shoot');void L.offsetWidth;L.classList.add('on');
   pop('<span style="color:#c8a070">'+LACKEY.name+' the archer!</span><small>Varro summons his lackey</small>','foe');
-  const specials=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=grid[r][c].t;if(t===SP||t===SL)specials.push({r,c})}
+  const specials=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=grid[r][c].t;if(t>=SP)specials.push({r,c})}
   let tgt;
   if(specials.length){tgt={...specials[Math.floor(Math.random()*specials.length)],special:true}}
-  else{const row=[];for(let c=0;c<N;c++){const t=grid[N-1][c].t;if(t!==SP&&t!==SL)row.push(c)}tgt={r:N-1,c:row.length?row[Math.floor(Math.random()*row.length)]:0,special:false}}
+  else{const row=[];for(let c=0;c<N;c++){const t=grid[N-1][c].t;if(t<SP)row.push(c)}tgt={r:N-1,c:row.length?row[Math.floor(Math.random()*row.length)]:0,special:false}}
   setTimeout(()=>{if(state!=='lackey')return;sayL(tgt.special?LACKEY.special[Math.floor(Math.random()*3)]:LACKEY.none[Math.floor(Math.random()*2)])},900);
   setTimeout(()=>{if(state!=='lackey')return;L.classList.add('shoot');
     const a=L.getBoundingClientRect(),br=cv.getBoundingClientRect(),sx=a.left+a.width*.85,sy=a.top+a.height*.54,tx=br.left+(tgt.c+.5)*cell,ty=br.top+(tgt.r+.5)*cell;
@@ -244,15 +245,15 @@ let arrow=null;
 function arrowTick(dt){const A=arrow;A.t+=dt;const k=Math.min(1,A.t/A.dur);A.x=A.sx+(A.tx-A.sx)*k;A.y=A.sy+(A.ty-A.sy)*k;
   if(k<1)return;
   arrow=null;$('lackey').classList.remove('on','shoot');const T=A.tgt,cells=[[T.r,T.c]];
-  if(T.special){for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(r===T.r&&c===T.c)continue;const t=grid[r][c].t;if(t===SP||t===SL)continue;if((r-T.r)**2+(c-T.c)**2<=LACKEY.radius*LACKEY.radius+.01)cells.push([r,c])}
+  if(T.special){for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(r===T.r&&c===T.c)continue;const t=grid[r][c].t;if(t>=SP)continue;if((r-T.r)**2+(c-T.c)**2<=LACKEY.radius*LACKEY.radius+.01)cells.push([r,c])}
     rings.push({x:A.tx,y:A.ty,t:0});burstFx(A.tx,A.ty,['#ffffff','#ffd166','#c84a2a','#7a5a3a'],50,cell*8);shake();buzz([40,30,100]);
-    pop('<span style="color:#c8a070">'+LACKEY.name+' shatters your '+(grid[T.r][T.c].t===SP?'force':'slingshot')+' gem!</span>','foe')}
+    pop('<span style="color:#c8a070">'+LACKEY.name+' shatters your '+(grid[T.r][T.c].t===SP?'force':grid[T.r][T.c].t===CR?'crush':'slingshot')+' gem!</span>','foe')}
   else{burstFx(A.tx,A.ty,['#ffffff','#c84a2a'],16,cell*4);buzz(40);pop('<span style="color:#c8a070">'+LACKEY.name+'\'s arrow</span><small>No special gems, so she hit the bottom row</small>','foe')}
   for(const[r,c]of cells){const g=grid[r][c];g.pop=true;g.burst=true;if(g.t<TYPES)burstCell(c,r,g.t,false,true)}
   popExtra=0;state='popping';popT=0}
 function startRage(){
   state='rage';say('rage',true);pop('<span style="color:#ff4d5e">RAGE!</span><small>'+foe.name+' tears up the board</small>','foe');buzz(150);shake();
-  const cells=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(grid[r][c].t!==SP&&grid[r][c].t!==SL)cells.push([r,c]);
+  const cells=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(grid[r][c].t<SP)cells.push([r,c]);
   cells.sort(()=>Math.random()-.5);rq={list:cells.slice(0,Math.round(N*N*.3)),i:0,t:0};
 }
 function rageTick(dt){
@@ -291,7 +292,7 @@ const gem=(t,x,y)=>({t,x,y,pop:false});
 const types=()=>grid.map(r=>r.map(g=>g?g.t:-1));
 function matchesIn(T,mode){
   const hit=new Set(),runs=[];
-  const ok=v=>v>=0&&v!==SP&&v!==SL&&(mode==='all'||v!==RED);
+  const ok=v=>v>=0&&v<SP&&(mode==='all'||v!==RED);
   for(let r=0;r<N;r++)for(let c=0;c<N;){let e=c;const v=T[r][c];if(ok(v)){while(e+1<N&&T[r][e+1]===v)e++;if(e-c>=2){const a=[];for(let k=c;k<=e;k++)a.push(r*N+k);runs.push({a,v})}}c=e+1}
   for(let c=0;c<N;c++)for(let r=0;r<N;){let e=r;const v=T[r][c];if(ok(v)){while(e+1<N&&T[e+1][c]===v)e++;if(e-r>=2){const a=[];for(let k=r;k<=e;k++)a.push(k*N+c);runs.push({a,v})}}r=e+1}
   // merge crossing runs of the same colour into shapes (L, T, +)
@@ -325,7 +326,7 @@ function fill(){
 function battle(){
   Music.setTrack(FOES[fi].theme!==undefined?FOES[fi].theme:Math.floor(Math.random()*Music.count));
   foe=FOES[fi];foeHp=foe.hp;hp=MAXHP;turns=EVERY;quiet=0;cursed=false;curseNow=false;gauge=Array(TYPES).fill(0);shown=Array(TYPES).fill(0);gq=[[],[],[],[],[],[]];gaugeWait=Array(TYPES).fill(0);power=0;pendingTurn=false;battleScore=score;
-  ammo=0;phase='player';forges=[];popExtra=0;delayQ=0;ward=0;lackeyQ=false;arrow=null;em=null;slashes=[];fxp=[];rings=[];preview=null;$('lackey').classList.remove('on','shoot');$('speech').classList.remove('on');sayT=0;noGauge=false;rage=false;charge=null;proj=null;chainN=0;replay=null;boxParts=[];dust=[];parts=[];rageQueued=false;armDur=foe.arm.map(a=>a[2]);rq=null;hl=null;combo=0;drag=null;floats=[];lastMoved=null;
+  ammo=0;crushQ=null;crushFall=null;hammer=null;phase='player';forges=[];popExtra=0;delayQ=0;ward=0;lackeyQ=false;arrow=null;em=null;slashes=[];fxp=[];rings=[];preview=null;$('lackey').classList.remove('on','shoot');$('speech').classList.remove('on');sayT=0;noGauge=false;rage=false;charge=null;proj=null;chainN=0;replay=null;boxParts=[];dust=[];parts=[];rageQueued=false;armDur=foe.arm.map(a=>a[2]);rq=null;hl=null;combo=0;drag=null;floats=[];lastMoved=null;
   $('foe').className='';buildFoe(foe);clearLog();lowSaid=false;setTimeout(()=>say('intro',true),700);$('stage').classList.remove('rage');
   $('over').classList.remove('on');fill();if(TEST_SLINGS)[[6,1],[6,3],[6,5]].forEach(([r,c])=>grid[r][c].t=SL);state='falling';renderFoe();renderMe();renderGauges();hud();
 }
@@ -399,7 +400,7 @@ function boxTick(dt){for(const p of boxParts){p.life-=dt;if(p.settled)continue;p
   boxParts=boxParts.filter(p=>p.life>0)}
 function collapse(){
   for(let c=0;c<N;c++){const fixed=new Set(),keep=[];
-    for(let r=N-1;r>=0;r--){const g=grid[r][c];if(!g.pop&&(g.t===SP||g.t===SL))fixed.add(r);else if(!g.pop)keep.push(g)}
+    for(let r=N-1;r>=0;r--){const g=grid[r][c];if(!g.pop&&(g.t>=SP))fixed.add(r);else if(!g.pop)keep.push(g)}
     let s=0,ki=0;for(let r=N-1;r>=0;r--){if(fixed.has(r))continue;grid[r][c]=keep[ki++]||gem(rnd(),c,-1-(s++))}}
   state='falling';
 }
@@ -417,16 +418,55 @@ function finishBlast(cells,bonus,x,y,keepSL,healGreens,free,mult){
   phase='player';if(!free)pendingTurn=true;setPopOrder(x-.5,y-.5);state='popping';popT=0;return gs;
 }
 const burstSize=f=>Math.min(7,1+Math.floor(f/.12));
-function startCharge(){charge={r:drag.r,c:drag.c,g:drag.g,f:0,T:.7+Math.random()*.1,lv:1};state='charging';buzz(15)}
+function startCharge(){charge={r:drag.r,c:drag.c,g:drag.g,f:0,T:.7+Math.random()*.1,lv:1,crush:!!drag.crush};state='charging';buzz(15)}
+/* ---------- Crush gem ----------
+   Every 2nd perfect force hit in a row earns one. Once that burst settles it drops from the top of the column
+   and smashes into the second force gem's spot. Held like a force gem (ring already at chain-stage speed);
+   a warhammer then crushes the current armour piece. */
+function dropCrush(q){state='crushDrop';crushFall={c:q.c,r:q.r,y:-1.4,vy:0};buzz(20)}
+function crushDropTick(dt){const f=crushFall;f.vy=Math.min(26,f.vy+60*dt);f.y+=f.vy*dt;
+  if(f.y>=f.r){const old=grid[f.r][f.c];if(old&&old.t<TYPES)burstCell(f.c,f.r,old.t,false,true);
+    grid[f.r][f.c]=gem(CR,f.c,f.r);grid[f.r][f.c].sq=.25;crushFall=null;Sfx.anvil();buzz([60,30,120]);const m=$('main');flash(m,'slam');
+    pixels(f.c+.5,f.r+.9,['#9aa0aa','#4a4e58','#c8283e','#ffffff'],24,.9);boardDirty=true;state='idle';afterTurn()}}
+// where an armour piece actually is on screen: the centre of its opaque pixels (left pauldron for the shoulders)
+function armourSpot(el){const r=el.getBoundingClientRect();if(!el._a)el._a=el.getContext('2d').getImageData(0,0,el.width,el.height).data;
+  const W=el.width,H=el.height,half=el.dataset.p==='0';let sx=0,sy=0,n=0;
+  for(let y=0;y<H;y+=2)for(let x=0;x<(half?W/2:W);x+=2)if(el._a[(y*W+x)*4+3]>0){sx+=x;sy+=y;n++}
+  return n?{x:r.left+sx/n/W*r.width,y:r.top+sy/n/H*r.height}:{x:r.left+r.width/2,y:r.top+r.height*.45}}
+function crushAt(ch,kind){const cut=CRUSH_CUT[kind],tgt=target();clearLog();
+  const sp=tgt?armourSpot(tgt):(()=>{const r=$('foe').getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height*.5}})();
+  hammer={x:sp.x,y:sp.y,t:0,hit:false,kind,cut,ch};state='hammer';buzz(30)}
+function hammerTick(dt){const h=hammer;h.t+=dt;
+  if(!h.hit&&h.t>=.28){h.hit=true;const p=piece();Sfx.crush(h.kind==='perfect');hitStop=.1;const m=$('main');flash(m,'slam');buzz([90,40,200]);
+    burstFx(h.x,h.y,['#d8dde4','#9aa0aa','#4a4e58','#ffffff','#c8283e'],h.kind==='perfect'?50:24,cell*8);rings.push({x:h.x,y:h.y,t:0});
+    if(p>=4){const d=Math.round(foe.arm[3][2]*h.cut);foeHp=Math.max(0,foeHp-d);Scars.skin(2);floats.push({s:'-'+d,x:N/2,y:.6,life:1.4,col:'#ff8a8a',big:h.kind==='perfect'})}
+    else{const d=Math.min(armDur[p],Math.round(foe.arm[p][2]*h.cut));armDur[p]-=d;Scars.armour(p,true);if(h.kind==='perfect')Scars.armour(p,false);
+      const el=$('foe').querySelector('.arm[data-p="'+p+'"]');if(el){flash(el,'struck')}
+      floats.push({s:(h.kind==='perfect'?'CRUSH! ':'')+'-'+d,x:N/2,y:.6,life:1.5,big:h.kind==='perfect'});
+      pop('<span style="color:#d8dde4">'+(h.kind==='perfect'?'Crushed!':'Crush')+'</span><small>'+PIECES[p]+(armDur[p]<=0?' broken!':' -'+d)+'</small>');
+      if(armDur[p]<=0)say('armour',true);if(!rage&&piece()===3){rage=true;rageQueued=true;$('stage').classList.add('rage')}}
+    flinch();const f=$('foe');f.classList.remove('hit');void f.offsetWidth;f.classList.add('hit');renderFoe()}
+  if(h.t>=.62){hammer=null;const ch=h.ch;finishBlast(new Set([ch.r*N+ch.c]),0,ch.c+.5,ch.r+.5,true)}}
+// the warhammer: haft and an iron head with a spike, swung down onto the armour piece
+function drawHammer(){const h=hammer;if(!h)return;const k=Math.min(1,h.t/.28),e=k*k*k,L=cell*2.4,a=.6+(-Math.PI/2-.6)*e,fade=h.t>.45?Math.max(0,1-(h.t-.45)/.17):1;
+  // pivot to the right of the target, so the head arcs over the top and lands squarely on the armour
+  fctx.save();fctx.globalAlpha=fade;fctx.translate(h.x+L,h.y);fctx.rotate(a);
+  fctx.fillStyle='#1a0d08';fctx.fillRect(-cell*.13,-L-2,cell*.26,L+4);fctx.fillStyle='#5a3418';fctx.fillRect(-cell*.09,-L,cell*.18,L);
+  fctx.fillStyle='#c9a23a';fctx.fillRect(-cell*.11,-cell*.5,cell*.22,cell*.12);fctx.fillRect(-cell*.11,-L*.55,cell*.22,cell*.1);
+  const hx=-cell*.75,hy=-L-cell*.45;fctx.fillStyle='#1a0d08';fctx.fillRect(hx-2,hy-2,cell*1.5+4,cell*.9+4);
+  fctx.fillStyle='#8a909a';fctx.fillRect(hx,hy,cell*1.5,cell*.9);fctx.fillStyle='#d8dde4';fctx.fillRect(hx,hy,cell*1.5,cell*.2);fctx.fillStyle='#4a4e58';fctx.fillRect(hx,hy+cell*.7,cell*1.5,cell*.2);
+  fctx.fillStyle='#8a909a';fctx.beginPath();fctx.moveTo(hx+cell*1.5,hy+cell*.2);fctx.lineTo(hx+cell*1.95,hy+cell*.45);fctx.lineTo(hx+cell*1.5,hy+cell*.7);fctx.fill();
+  if(k<1){fctx.globalAlpha=fade*.25;fctx.fillStyle='#d8dde4';fctx.fillRect(hx,hy-cell*.3,cell*1.5,cell*.25)}
+  fctx.restore()}
 function burstAt(r0,c0,rad,ok,perfect){
   clearLog();if(ok!==false)Sfx.gold(!!perfect,perfect?chainN:0);  // each chain link rings higher
   if(!perfect)chainN=0;
   const cells=new Set([r0*N+c0]);
-  for(let r=Math.max(0,r0-rad);r<=Math.min(N-1,r0+rad);r++){const t=grid[r][c0].t;if(r!==r0&&(t===SP||t===SL))continue;cells.add(r*N+c0)}
+  for(let r=Math.max(0,r0-rad);r<=Math.min(N-1,r0+rad);r++){const t=grid[r][c0].t;if(r!==r0&&(t>=SP))continue;cells.add(r*N+c0)}
   const n=1;delayQ+=n;let earned=0;for(let i=0;i<n;i++)earned+=8+Math.floor(Math.random()*5);money+=earned;hud();floats.push({s:'+'+earned+' gold',x:c0+.5,y:r0+.9,life:1.6});
   try{localStorage.setItem('gothicmatchr-gold',money)}catch(e){}
   let reds=[];if(perfect){for(let r=0;r<N;r++)for(let c=0;c<N;c++){const k=r*N+c;if(!cells.has(k)&&grid[r][c].t===RED)reds.push(k)}
-    reds=reds.filter(k=>{const t=grid[Math.floor(k/N)][k%N].t;return t!==SP&&t!==SL});reds.sort(()=>Math.random()-.5);reds=reds.slice(0,PERFECT_REDS);reds.forEach(k=>cells.add(k))}
+    reds=reds.filter(k=>{const t=grid[Math.floor(k/N)][k%N].t;return t<SP});reds.sort(()=>Math.random()-.5);reds=reds.slice(0,PERFECT_REDS);reds.forEach(k=>cells.add(k))}
   const gs=finishBlast(cells,20*rad+30*(n-1),c0+.5,r0+.5,true);
   if(ok==='tap'){pixels(c0+.5,r0+.5,['#ffd166','#f5a623'],14,.6);buzz(40)}
   else if(ok){
@@ -434,7 +474,7 @@ function burstAt(r0,c0,rad,ok,perfect){
     for(const g of gs)if(g.t<TYPES)pixels(g.x+.5,g.y+.5,COLORS[g.t],4,.6);
     floats.push({s:(perfect?'PERFECT! ':'')+'Burst '+rad+'!'+(n>1?' Chain x'+n:''),x:c0+.5,y:r0-.3,life:1.6});flinch();buzz(perfect?[60,40,120]:90);shake();
     if(perfect){reds.forEach(k=>pixels(k%N+.5,Math.floor(k/N)+.5,COLORS[RED],10,.8));
-      chainN=chainN+1;if(chainN===1)chainBase=8+Math.random()*4;const pct=chainBase+2*(chainN-1);
+      chainN=chainN+1;if(chainN===1)chainBase=8+Math.random()*4;if(chainN%2===0)crushQ={r:r0,c:c0};const pct=chainBase+2*(chainN-1);
       let tot=0;const broke=[];armDur.forEach((d,i)=>{if(d<=0)return;Scars.armour(i,false);const hit=Math.round(foe.arm[i][2]*pct/100);armDur[i]=Math.max(0,d-hit);tot+=Math.min(d,hit);if(armDur[i]<=0)broke.push(PIECES[i])});
       if(!rage&&piece()===3){rage=true;rageQueued=true;$('stage').classList.add('rage')}
       boardDirty=true;
@@ -490,10 +530,10 @@ function slingTick(dt){
     const bx=(proj.x-br.left)/cell,by=(proj.y-br.top)/cell;
     if(by>=0&&by<N){if(bx<0||bx>=N)return endSling(false);
       const c=Math.floor(bx),r=Math.floor(by),k=r*N+c,g=grid[r][c];
-      if(g&&g.t===SP&&!proj.pushed.has(g)&&Math.hypot(bx-c-.5,by-r-.5)<.55){let bk=-1,bd=99;
+      if(g&&(g.t===SP||g.t===CR)&&!proj.pushed.has(g)&&Math.hypot(bx-c-.5,by-r-.5)<.55){let bk=-1,bd=99;
         proj.cells.forEach(q=>{const qr=Math.floor(q/N),qc=q%N,dd=Math.hypot(qr-r,qc-c);if(dd<bd){bd=dd;bk=q}});
         if(bk>=0){const qr=Math.floor(bk/N),qc=bk%N,hole=grid[qr][qc];grid[qr][qc]=g;grid[r][c]=hole;proj.cells.delete(bk);proj.cells.add(k);proj.pushed.add(g);floats.push({s:'Pushed!',x:qc+.5,y:qr+.3,life:1});buzz(12)}}
-      if(g&&g.t!==SP&&g.t!==SL&&!proj.cells.has(k)&&Math.hypot(bx-c-.5,by-r-.5)<.55){proj.cells.add(k);g.dying=0;g.burst=true;Sfx.pop(g.t);if(g.t<TYPES)burstCell(c,r,g.t,false);buzz(8)}}
+      if(g&&g.t<SP&&!proj.cells.has(k)&&Math.hypot(bx-c-.5,by-r-.5)<.55){proj.cells.add(k);g.dying=0;g.burst=true;Sfx.pop(g.t);if(g.t<TYPES)burstCell(c,r,g.t,false);buzz(8)}}
     else if(by<0){const hel=armourHit(proj.x,proj.y,proj.pierce);if(hel){proj.hit=true;proj.hold=.35;const el=hel;proj.hitP=el.dataset.p===undefined?4:+el.dataset.p;
         el.classList.remove('struck');void el.offsetWidth;el.classList.add('struck');setTimeout(()=>el.classList.remove('struck'),550);
         burstFx(proj.x,proj.y,['#ffffff','#7ff5e1','#3fd6c0',foe.armour,'#ffd166'],46,cell*9);rings.push({x:proj.x,y:proj.y,t:0});buzz(60);return}
@@ -518,7 +558,7 @@ function drawShred(sl){if(sl.t<0)return;shredShape(sl);const ux=Math.cos(sl.a),u
     if(!tr.shed&&k>=1){tr.shed=1;if(!lowFx)for(let i=0;i<5&&slivers.length<60;i++){const u=.15+.7*Math.random(),side=Math.random()<.5?1:-1,v=60+Math.random()*120;
       slivers.push({x:sx+ux*L*u,y:sy+uy*L*u,vx:nx*side*v+ux*(Math.random()-.5)*60,vy:ny*side*v-40,r:sl.a,vr:(Math.random()-.5)*14,l:4+Math.random()*7,h:1+Math.random()*1.5,c:Math.random()<.5?'#c8283e':'#3a0c14',life:.6+Math.random()*.3})}}}}
 function drawFx(){
-  const any=slivers.length||slacks.length||(drag&&drag.sling)||proj||slashes.length||dust.length||arrow||rings.length||fxp.length;
+  const any=hammer||slivers.length||slacks.length||(drag&&drag.sling)||proj||slashes.length||dust.length||arrow||rings.length||fxp.length;
   if(!any&&!fxDrawn)return;fxDrawn=!!any;
   fctx.clearRect(0,0,innerWidth,innerHeight);if(!any)return;fctx.imageSmoothingEnabled=false;
   const br=cv.getBoundingClientRect(),im=sprites[SL];if(!im)return;
@@ -533,6 +573,7 @@ function drawFx(){
     const z=cell*1.3*(proj.hit?1+Math.sin(proj.hold*40)*.12:1);
     fctx.save();fctx.translate(proj.x,proj.y);fctx.rotate(proj.spin);if(lowFx)fctx.drawImage(im,-z/2,-z/2,z,z);else{const gs=glowSprite(SL,'#7ff5e1',12),gz=z*(1+2*gs.pad/cell);fctx.drawImage(gs,-gz/2,-gz/2,gz,gz)}fctx.restore();
     if(proj.hit){fctx.save();fctx.globalAlpha=Math.min(1,proj.hold*4);fctx.fillStyle='#fff';fctx.beginPath();fctx.arc(proj.x,proj.y,cell*.9,0,Math.PI*2);fctx.fill();fctx.restore()}}
+  drawHammer();
   for(const sl of slashes)drawShred(sl);
   for(const v of slivers){fctx.save();fctx.globalAlpha=Math.min(1,v.life*3);fctx.translate(v.x,v.y);fctx.rotate(v.r);fctx.fillStyle=v.c;fctx.beginPath();fctx.moveTo(-v.l/2,0);fctx.lineTo(v.l/2,-v.h);fctx.lineTo(v.l/3,v.h);fctx.closePath();fctx.fill();fctx.restore()}
   for(const p of dust){if(p.delay>0)continue;fctx.globalAlpha=Math.min(1,p.life*2);fctx.fillStyle=p.col;fctx.fillRect(Math.round(p.x-p.s/2),Math.round(p.y-p.s/2),Math.round(p.s),Math.round(p.s))}fctx.globalAlpha=1;
@@ -545,9 +586,9 @@ function drawFx(){
 }
 function chargeTick(dt){
   if(drag&&drag.special&&!drag.axis&&!drag.cancel&&state==='idle'&&!charge){drag.hold=(drag.hold||0)+dt;if(drag.hold>=HOLD)startCharge()}
-  if(state==='charging'){charge.f+=dt/(CHARGE*(1-CHAIN_SPEEDUP*chainN));const lv=burstSize(charge.f);if(lv!==charge.lv){charge.lv=lv;buzz(12)}
+  if(state==='charging'){charge.f+=dt/(CHARGE*(1-CHAIN_SPEEDUP*(charge.crush?CRUSH_STAGE:chainN)));const lv=burstSize(charge.f);if(lv!==charge.lv){charge.lv=lv;buzz(12)}
     if(charge.f>=charge.T){drag=null;state='fizzle';fz=0;charge.g.dark=true;buzz(120);Sfx.fizzle()}}
-  else if(state==='fizzle'){fz+=dt;charge.g.shrink=1-.45*Math.min(1,fz/.45);if(fz>=.55){const ch=charge;charge=null;burstAt(ch.r,ch.c,1,false)}}
+  else if(state==='fizzle'){fz+=dt;charge.g.shrink=1-.45*Math.min(1,fz/.45);if(fz>=.55){const ch=charge;charge=null;if(ch.crush)crushAt(ch,'fizzle');else burstAt(ch.r,ch.c,1,false)}}
   for(const p of parts){p.vy+=9*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt}parts=parts.filter(p=>p.life>0);
 }
 function targets(){
@@ -582,10 +623,11 @@ function frame(now){
   if(state==='popping')for(const row of grid)for(const g of row)if(g&&g.pop&&!g._lit&&g.dying===undefined&&popT>=(g.bAt||0)){g._lit=1;Sfx.match(sfxN++)}
   if(state==='popping')for(const row of grid)for(const g of row)if(g&&g.pop&&!g.burst&&g.dying===undefined&&popT>=burstT(g)){g.burst=true;buzz(6);Sfx.pop(g.t);if(g.blast&&!g.blast.fx){g.blast.fx=1;const br=cv.getBoundingClientRect();rings.push({x:br.left+g.blast.x*cell,y:br.top+g.blast.y*cell,t:0});shake();buzz([30,20,60])}burstCell(g.x,g.y,g.t<TYPES?g.t:0,false,false,g.blast)}
   boxTick(dt);dustTick(dt);for(const f of forges)f.t+=dt;forges=forges.filter(f=>f.t<.95);
-  if(state==='rage')rageTick(dt);
+  if(state==='crushDrop')crushDropTick(dt);else if(state==='rage')rageTick(dt);
   else if(state==='enemyAnim')enemyTick(dt);
   else if(state==='lackey'&&arrow)arrowTick(dt);
   else if(state==='sling'&&proj)slingTick(dt);
+  else if(state==='hammer'&&hammer)hammerTick(dt);
   else if(state==='popping'){popT+=dt;if(popT>=popEnd())collapse()}else if(state==='falling'&&settled)step();
   fxTick(dt);
   const busy=boardDirty||!settled||(slingOnBoard()&&slingTugging())||state!=='idle'||drag||charge||hl||floats.length||parts.length||boxParts.length||forges.length||now-lastFull>500;
@@ -628,7 +670,7 @@ function draw(){
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){ctx.fillStyle=(r+c)%2?'#1a141d':'#221a26';ctx.fillRect(c*cell,r*cell,cell+.5,cell+.5)}
   if(drag&&drag.axis){ctx.fillStyle=drag.enemy?'rgba(255,77,94,.3)':'rgba(255,95,162,.16)';drag.axis==='h'?ctx.fillRect(drag.lo*cell,drag.i*cell,(drag.hi-drag.lo+1)*cell,cell):ctx.fillRect(drag.i*cell,drag.lo*cell,cell,(drag.hi-drag.lo+1)*cell)}
   if(hl){ctx.fillStyle='rgba(255,77,94,'+Math.min(.35,hl.life*.5)+')';hl.axis==='h'?ctx.fillRect(0,hl.i*cell,size,cell):ctx.fillRect(hl.i*cell,0,cell,size)}
-  if(charge&&state==='charging'){const rad=burstSize(charge.f);ctx.fillStyle='rgba(255,209,102,.2)';
+  if(charge&&state==='charging'&&!charge.crush){const rad=burstSize(charge.f);ctx.fillStyle='rgba(255,209,102,.2)';
     for(let r=Math.max(0,charge.r-rad);r<=Math.min(N-1,charge.r+rad);r++)ctx.fillRect(charge.c*cell+1,r*cell+1,cell-2,cell-2)}
   // picked-up gem highlight
   if(drag&&!drag.enemy&&!drag.cancel&&!drag.sling&&state==='idle'){const g=drag.g;ctx.fillStyle='rgba(255,255,255,.16)';ctx.fillRect(drag.c*cell,drag.r*cell,cell,cell);
@@ -673,6 +715,7 @@ function draw(){
       ctx.strokeStyle=col[1];ctx.lineWidth=4*(1-k)+1;ctx.beginPath();ctx.arc(cx,cy,cell*(.3+k*1.3),0,7);ctx.stroke();
       ctx.translate(cx,cy);ctx.rotate(k*1.2);ctx.fillStyle=col[0];for(let i=0;i<8;i++){ctx.rotate(Math.PI/4);ctx.fillRect(cell*(.35+k*.5),-1.5,cell*.35*(1-k),3)}}
     ctx.restore()}
+  if(crushFall){const z=cell*1.1,x=(crushFall.c+.5)*cell-z/2,y=(crushFall.y+.5)*cell-z/2;ctx.globalAlpha=.25;ctx.drawImage(sprites[CR],x,y-cell*.5,z,z);ctx.globalAlpha=1;ctx.drawImage(sprites[CR],x,y,z,z)}
   if(top){const s=1.15;ctx.drawImage(sprites[top.t],top.x*cell-cell*(s-1)/2,top.y*cell-cell*(s-1)/2,cell*s,cell*s)}
   for(const p of parts){ctx.globalAlpha=Math.min(1,p.life*2);ctx.fillStyle=p.col;const z=p.s*cell;ctx.fillRect(Math.round(p.x*cell-z/2),Math.round(p.y*cell-z/2),Math.round(z),Math.round(z))}ctx.globalAlpha=1;
   ctx.textAlign='center';ctx.font='400 '+Math.round(cell*.36)+'px Marcellus,system-ui,sans-serif';
@@ -685,7 +728,7 @@ cv.addEventListener('pointerdown',e=>{
   if(locked){Sfx.clunk(true);nudge(cv.parentNode);buzz(20);return}
   if(state==='select'){const[x,y]=pos(e),c=Math.floor(x/cell),r=Math.floor(y/cell);if(c<0||r<0||c>=N||r>=N)return;const g=grid[r][c];if(!g||g.t>=TYPES){if(g)g.wig=0;Sfx.clunk();buzz(15);return}starPick(g.t,r,c);return}
   if(state!=='idle'||drag)return;const[x,y]=pos(e),c=Math.floor(x/cell),r=Math.floor(y/cell);if(c<0||r<0||c>=N||r>=N)return;
-  drag={r,c,sx:x,sy:y,axis:null,d:0,g:grid[r][c],id:e.pointerId,special:grid[r][c].t===SP,sling:grid[r][c].t===SL,px:0,py:0};if(drag.sling)setTarget(true);cv.setPointerCapture(e.pointerId);buzz(8);
+  drag={r,c,sx:x,sy:y,axis:null,d:0,g:grid[r][c],id:e.pointerId,special:grid[r][c].t===SP||grid[r][c].t===CR,crush:grid[r][c].t===CR,sling:grid[r][c].t===SL,px:0,py:0};if(drag.sling)setTarget(true);cv.setPointerCapture(e.pointerId);buzz(8);
 });
 cv.addEventListener('pointermove',e=>{
   if(!drag||e.pointerId!==drag.id||drag.cancel||charge)return;const[x,y]=pos(e),dx=x-drag.sx,dy=y-drag.sy;
@@ -694,10 +737,10 @@ cv.addEventListener('pointermove',e=>{
   const d=drag.axis==='h'?dx:dy;drag.d=Math.max((drag.lo-drag.o)*cell,Math.min((drag.hi-drag.o)*cell,d));
 });
 function release(e){
-  if(state==='charging'&&charge){drag=null;const ch=charge;charge=null;burstAt(ch.r,ch.c,burstSize(ch.f),true,ch.f>=ch.T-PERFECT);return}
+  if(state==='charging'&&charge){drag=null;const ch=charge;charge=null;if(ch.crush)crushAt(ch,ch.f>=ch.T-PERFECT?'perfect':'weak');else burstAt(ch.r,ch.c,burstSize(ch.f),true,ch.f>=ch.T-PERFECT);return}
   if(!drag||e.pointerId!==drag.id)return;const D=drag;drag=null;
   if(D.sling){setTarget(false);if(slingOk(D)&&state==='idle')fireSling(D);else slack(D);return}
-  if(D.special&&!D.axis){const[x,y]=pos(e);if(!D.cancel&&(D.hold||0)<HOLD&&Math.hypot(x-D.sx,y-D.sy)<cell*.6&&state==='idle')burstAt(D.r,D.c,1,'tap');return}
+  if(D.special&&!D.axis){const[x,y]=pos(e);if(!D.cancel&&(D.hold||0)<HOLD&&Math.hypot(x-D.sx,y-D.sy)<cell*.6&&state==='idle'){if(D.crush){D.g.wig=0;buzz(10)}else burstAt(D.r,D.c,1,'tap')}return}
   if(!D.axis)return;const t=Math.max(0,Math.min(N-1,Math.round(D.o+D.d/cell)));if(t===D.o)return;
   setLine(grid,D.axis,D.i,slide(lineOf(grid,D.axis,D.i),D.o,t));
   if(matchesIn(types(),'p').hit.size){clearLog();chainN=0;firstStep=true;lastMoved=D.g;pendingTurn=true;phase='player';combo=0;state='falling'}
@@ -711,7 +754,7 @@ $('gauges').innerHTML=ATK.map(t=>`<button class="g" aria-label="${GEMS[t].n} gau
 $('gauges').querySelectorAll('.g').forEach((b,j)=>b.addEventListener('click',()=>{const t=ATK[j],G=GEMS[t];
     if(t===STAR&&state==='select'){gauge[t]=shown[t]=G.cap;state='idle';renderGauges();return}
     if(!(ready(t)&&state==='idle'&&!locked)){nudge(b);Sfx.clunk(locked);buzz(15);return}  // not yet: the bucket shakes and clunks
-    gauge[t]=shown[t]=0;gq[t]=[];if(t===STAR)startSelect();else fire(t);
+    gauge[t]=shown[t]=0;gq[t]=[];if(t===STAR)startSelect();else{Sfx.bucket();flash(b,'fire')}  // buckets no longer damage the enemy
     // bucket bonuses fly to where they land instead of being described
     if(t===4){ammo++;const a=$('ammoTag'),was=!a.hidden;renderMe();if(!was)a.classList.add('due');flyIcon(b,a,icons[4],1,()=>a.classList.remove('due'))}
     if(t===1){ward=1;const w=$('wardTag');renderMe();w.classList.add('due');flyIcon(b,w,icons[1],1,()=>w.classList.remove('due'))}

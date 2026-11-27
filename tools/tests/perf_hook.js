@@ -4,7 +4,7 @@ if(location.hash==="#low")addEventListener("load",()=>setLowFx());window.__ft=[]
 window.__busy=function(ms){ms=ms||3000;const end=performance.now()+ms;
   (function tick(){if(performance.now()>end)return;
     if(state==='idle'&&!locked){const moves=[];
-      for(const axis of['h','v'])for(let i=0;i<N;i++)for(let o=0;o<N;o++){const L=lineOf(types(),axis,i);if(L[o]===SL||L[o]===SP)continue;const[lo,hi]=span(L,o,axis);
+      for(const axis of['h','v'])for(let i=0;i<N;i++)for(let o=0;o<N;o++){const L=lineOf(types(),axis,i);if(L[o]>=SP)continue;const[lo,hi]=span(L,o,axis);
         for(let t=lo;t<=hi;t++){if(t===o)continue;const T=types();setLine(T,axis,i,slide(lineOf(T,axis,i),o,t));if(matchesIn(T,'p').hit.size)moves.push([axis,i,o,t])}}
       if(moves.length){const[axis,i,o,t]=moves[Math.floor(Math.random()*moves.length)];setLine(grid,axis,i,slide(lineOf(grid,axis,i),o,t));clearLog();chainN=0;firstStep=true;pendingTurn=true;phase='player';combo=0;state='falling'}}
     for(let k=0;k<6;k++)burstCell(Math.floor(Math.random()*N),Math.floor(Math.random()*N),1+Math.floor(Math.random()*5),false,false,k===0?{x:3.5,y:3.5}:null);

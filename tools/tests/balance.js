@@ -15,4 +15,4 @@ const ix=path.join(dst,'index.html');fs.writeFileSync(ix,fs.readFileSync(ix,'utf
     const r=await pg.evaluate(()=>({...__bal,hits:undefined,avgHit:__bal.hits.length?Math.round(__bal.hits.reduce((a,b)=>a+b,0)/__bal.hits.length):0,err:window.__err||''}));
     rows.push({foe:['Varro','Morwen','Oren','Dask'][fi],res,...r});await pg.close()}
   await b.close();fs.rmSync(dst,{recursive:true,force:true});
-  for(const r of rows)console.log(`${r.foe.padEnd(7)} ${r.res.padEnd(16)} myTurns ${String(r.pt).padStart(3)} foeTurns ${String(r.et).padStart(3)} dmgTaken ${String(r.taken).padStart(4)} avgHit ${String(r.avgHit).padStart(3)} maxHit ${String(r.maxHit).padStart(3)} falls ${r.falls} minHp ${r.minHp} foeHealed ${r.foeHeal}${r.err?' ERR '+r.err.slice(0,200):''}`)})();
+  for(const r of rows)console.log(`${r.foe.padEnd(7)} ${r.res.padEnd(16)} myTurns ${String(r.pt).padStart(3)} foeTurns ${String(r.et).padStart(3)} dmgTaken ${String(r.taken).padStart(4)} avgHit ${String(r.avgHit).padStart(3)} maxHit ${String(r.maxHit).padStart(3)} falls ${r.falls} minHp ${r.minHp} foeHealed ${r.foeHeal} crush ${r.crush||0}${r.err?' ERR '+r.err.slice(0,200):''}`)})();

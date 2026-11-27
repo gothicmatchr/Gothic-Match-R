@@ -159,3 +159,14 @@ boom = sweep(140, 38, .32) * env(T(.32), .002, .32)
 crunch = lp(noise(.09), 2600) * env(T(.09), .0008, .09)
 ring = mix((bell(hz('D3'), .45, 1.4, 1.41), 0, .6), (bell(hz('A2'), .4, 1.2, 1.41), 0, .4))
 finish('hit', mix((boom, 0, 1), (crunch, 0, .6), (lp(ring, 1600), .005, .35)), tail=.45)
+
+# CRUSH: the warhammer lands on armour. Deep boom, a crunch of bending metal, an inharmonic iron clang on D.
+iron = mix(*[(bell(hz(nm), .9, 2.6, r), 0, g) for nm, r, g in (('D2', 2.76, .7), ('A2', 3.1, .45), ('D3', 2.4, .3))])
+boom = sweep(120, 32, .5) * env(T(.5), .002, .5)
+bend = lp(noise(.18), 3000) * env(T(.18), .001, .18)
+finish('crush', mix((boom, 0, 1), (bend, 0, .7), (lp(iron, 2600), .004, .55), (bend, .05, .3)), tail=.8)
+
+# ANVIL: the Crush gem lands on the board. A heavy dull thunk with a short ringing clank.
+thunk = sweep(90, 40, .22) * env(T(.22), .002, .22)
+clank = mix((bell(hz('A3'), .4, 2.2, 2.76), 0, .6), (bell(hz('D4'), .3, 1.8, 2.76), .01, .35))
+finish('anvil', mix((thunk, 0, 1), (lp(clank, 3000), 0, .5), (lp(noise(.03), 2000) * env(T(.03), .0005, .03), 0, .4)), tail=.5)

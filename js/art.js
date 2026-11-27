@@ -9,7 +9,7 @@ function crisp(c,outline){const x=c.getContext('2d'),W=c.width,im=x.getImageData
   x.putImageData(im,0,0)}
 function gemArt(t){
   const c=document.createElement('canvas');c.width=c.height=GP;const x=c.getContext('2d');
-  if(t===SP||t===SL){x.drawImage(orbCanvas(t,GP),0,0);crisp(c,[20,10,18]);return c}
+  if(t>=SP){x.drawImage(orbCanvas(t,GP),0,0);crisp(c,[20,10,18]);return c}
   if(t===3){const[l,m,dk]=COLORS[3],rim=mix(dk,'#000000',.1);
     x.fillStyle=rim;x.beginPath();x.arc(12,12,11.2,0,7);x.fill();
     const g=x.createLinearGradient(4,3,20,21);g.addColorStop(0,mix(l,'#ffffff',.45));g.addColorStop(.5,m);g.addColorStop(1,dk);x.fillStyle=g;x.beginPath();x.arc(12,12,10,0,7);x.fill();
@@ -46,6 +46,17 @@ function gemCanvas(t,px){
 }
 function orbCanvas(t,px){
   const o=document.createElement('canvas');o.width=o.height=px;const c=o.getContext('2d'),m=px/2;
+  if(t===CR){  // Crush: an iron orb with a crimson rim and a warhammer across it
+    const R=px*.4,glow=c.createRadialGradient(m,m,R*.3,m,m,R*1.25);glow.addColorStop(0,'rgba(255,90,80,.75)');glow.addColorStop(1,'rgba(160,20,30,0)');
+    c.fillStyle=glow;c.fillRect(0,0,px,px);
+    const g=c.createRadialGradient(m-R*.3,m-R*.35,R*.1,m,m,R);g.addColorStop(0,'#9aa0aa');g.addColorStop(.55,'#4a4e58');g.addColorStop(1,'#1c1d24');
+    c.beginPath();c.arc(m,m,R*.85,0,Math.PI*2);c.fillStyle=g;c.fill();c.lineWidth=px*.05;c.strokeStyle='#8c1f2a';c.stroke();
+    c.save();c.translate(m,m);c.rotate(-Math.PI/4);const u=R/10;
+    c.fillStyle='#5a3418';c.fillRect(-u*.8,-u*2,u*1.6,u*9);c.fillStyle='#c9a23a';c.fillRect(-u*.9,u*3.5,u*1.8,u*1.1);  // haft + band
+    c.fillStyle='#d8dde4';c.fillRect(-u*4.6,-u*5.2,u*9.2,u*3.6);c.fillStyle='#7d8792';c.fillRect(-u*4.6,-u*2.6,u*9.2,u*1);  // head
+    c.fillStyle='#ffffff';c.fillRect(-u*4.2,-u*4.9,u*3,u*.7);c.fillStyle='#1c1d24';c.fillRect(-u*.4,-u*5.2,u*.8,u*3.6);
+    c.restore();return o;
+  }
   if(t===SL){
     const R=px*.4,glow=c.createRadialGradient(m,m,R*.2,m,m,R*1.25);glow.addColorStop(0,'rgba(170,255,240,.9)');glow.addColorStop(1,'rgba(80,220,200,0)');
     c.fillStyle=glow;c.fillRect(0,0,px,px);

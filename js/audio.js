@@ -46,7 +46,7 @@ const Music=(()=>{
 })();
 
 const Sfx=(()=>{
-  const FILES={match:.35,pop:.4,forge:.5,gold:.6,gold_perfect:.7,fizzle:.45,sling:.5,bucket:.65,clunk:.55,snap:.5,spill:.35,hit:.8}; // name: volume
+  const FILES={match:.35,pop:.4,forge:.5,gold:.6,gold_perfect:.7,fizzle:.45,sling:.5,bucket:.65,clunk:.55,snap:.5,spill:.35,hit:.8,crush:.9,anvil:.8}; // name: volume
   // D harmonic minor, in semitones from D: each gem in a match chain rings one step higher
   const SCALE=[0,2,3,5,7,8,11,12,14,15,17,19,20,23,24,26,27];
   let ctx=null,master=null;const buf={},last={};let voices=0;
@@ -73,6 +73,8 @@ const Sfx=(()=>{
     clunk:low=>play('clunk',low?.8:1,1,90),  // "not yet": lower for the locked board
     snap:()=>play('snap',1,1,120),
     hit:big=>play('hit',big?.82:1+Math.random()*.06,big?1.15:.9,60),
+    crush:perfect=>play('crush',perfect?.92:1.08,perfect?1.1:.8),
+    anvil:()=>play('anvil'),
     spill:()=>play('spill',.95+Math.random()*.1,1,70),
     suspend(){if(ctx&&ctx.state==='running')ctx.suspend()},resume(){if(ctx)ctx.resume()}};
 })();

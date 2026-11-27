@@ -57,8 +57,8 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
 - 7×7 board, HuniePop-style drag: slide a gem any distance along its row/column; no match = snap back.
 - Gems: Diamond (enemy gem, dark matte purple), Shield (blue), Plus (green, heals you), Coin
   (gold coin), Square (purple), Star (pink).
-- Enemy HP = right board border; player HP = left border. Matches damage enemy HP;
-  bucket blasts damage armour. Armour comes off in order: shoulders, helmet, lower chest,
+- Enemy HP = right board border; player HP = left border. Matches damage enemy HP. Armour comes off
+  only from slingshot hits, perfect force hits and Crush gems (buckets no longer damage the enemy). Armour comes off in order: shoulders, helmet, lower chest,
   upper chest; each piece has its own weakness/resistance. Goal: strip all armour before the
   enemy dies (bonus 300 per piece + 1000 for a full strip; less reward with armour left).
 - Coins: your coin matches give 1 gold per coin gem, no damage, still fill the Coin bucket.
@@ -78,6 +78,13 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
   perfect band (fizzles if overshot). Perfect: up to 5 diamonds destroyed, all armour −8–12%,
   chain strikes on consecutive turns +2% each up to 5. Gives 8–12 gold, delays the enemy.
   Drag horizontally only; other gems slide through it on both axes. No gravity.
+- **Crush gem** (`CR`): every 2nd perfect force hit in a row (chain links 2 and 4) earns one. Once that
+  burst settles it falls from the top of that column and smashes into the second force gem's spot
+  (`dropCrush`, `Sfx.anvil`). Held like a force gem, but its ring charges at chain-stage 3 speed
+  (`CRUSH_STAGE`). Release: a warhammer swings down onto the current armour piece (`crushAt`,
+  `drawHammer`, `Sfx.crush`) and cuts it by 50% of its total (perfect), 25% (outside the band) or 10%
+  (overshoot) (`CRUSH_CUT`); with no armour left it hits HP. Uses your turn. A short tap only wiggles it.
+  Treated as a special: no gravity, slingshots push it aside, Andressa can shoot it.
 - **Slingshot gem** (L/T/cross): pull down and release; free action; pops gems in its path;
   hitting the current armour piece fires that piece's weak bucket ×1.5; no armour = reduced
   body blow. Pushes force gems aside. No gravity. Specials can't destroy each other.
@@ -86,6 +93,8 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
   and lets go. No text label. Aiming shows the full crossbow flexing with the pull.
 - Buckets fill from gem dust: the bar rises only as dust lands (`shown[]`; `gauge[]` is the true
   total, 1.5 s catch-up if no dust arrives); fire once the bar is visibly full; tap to fire; each heals 20% of round max HP.
+  Emptying a bucket does **not** damage the enemy (removed: it stripped armour too fast and unclearly).
+  Slingshot hits still fire the piece's weak bucket ×1.5 as armour damage (`fire()`).
   Shield: also a Ward that blocks the next enemy attack. Coin: also +15 gold.
   Square: also loads a stacking **Piercing shot** — next slingshot can hit any intact armour
   piece; a later piece is damaged but can't break before its turn (stops at 1).
@@ -124,10 +133,13 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
   (`balance_bot.js`) on the virtual clock and prints turns, damage taken, hits, falls and outcome.
   After the difficulty pass (16 battles): 15/16 wins, enemy 4–8 turns per battle, avg hit 12–25,
   min HP mostly 15–60; before it the enemy got 0–4 turns and the player rarely dropped below 70.
+- After removing bucket damage (12 battles): 11/12 wins but only 0–1 armour pieces stripped (was 2–4);
+  matches kill the enemy first and rage rarely triggers. Balance follow-up pending with Jamil.
 - Stress bot: `tools/tests/stress.py` plays thousands of actions on a patched copy of the game
   under a virtual clock (`vclock.js`) and reports errors/stuck states. It expects a copy at
   `/tmp/gs_stress2` with `stress.patch` applied to `js/game.js` (adds `window.__api`), and Chrome
-  at `/usr/bin/google-chrome`. Adjust paths to your environment.
+  at `/usr/bin/google-chrome`. Adjust paths to your environment. After editing game.js, run
+  `python3 tools/tests/make_stress_patch.py` to regenerate the patch.
 - Performance: `node tools/tests/perf.js` (Node Playwright; injects `perf_hook.js`) measures idle and busy
   frames at CPU throttle ×1/×4/×6 on a phone-sized viewport. `LOW=1` forces low effects.
   After the performance pass (headless, software rendering), mean frame ms:
