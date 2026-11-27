@@ -29,10 +29,8 @@ main.hurt{animation:hurt .4s}
 @keyframes bheal{0%{box-shadow:0 0 0 2px #e8ffe8,0 0 22px 6px #3aff7a;filter:brightness(1.9)}25%{transform:scaleX(1.5)}45%{box-shadow:0 0 0 2px #9affb8,0 0 12px 3px #3aff7a;filter:brightness(1.1);transform:scaleX(1)}65%{box-shadow:0 0 0 2px #e8ffe8,0 0 18px 5px #3aff7a;filter:brightness(1.6);transform:scaleX(1.3)}100%{box-shadow:none;filter:none;transform:none}}
 .vbar.me i{background:linear-gradient(0deg,#1f9e5a,var(--green))}.vbar.foe i{background:linear-gradient(0deg,#b8233a,#ff8a5c)}
 .vbar::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent calc(25% - 1px),rgba(0,0,0,.5) 0 25%,transparent 0 calc(50% - 1px),rgba(0,0,0,.5) 0 50%,transparent 0 calc(75% - 1px),rgba(0,0,0,.5) 0 75%,transparent 0)}
-.stage>*:not(#bg):not(.feed):not(.speech):not(#lackey):not(.mus):not(.volpanel):not(#foe){position:relative;z-index:1}
+.stage>*:not(#bg):not(#rageGlow):not(.feed):not(.speech):not(#lackey):not(.mus):not(.volpanel):not(#foe){position:relative;z-index:1}
 #bg{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;z-index:0}
-#foe{animation:flick 3.1s infinite}
-@keyframes flick{0%,100%{filter:brightness(1)}20%{filter:brightness(1.05)}35%{filter:brightness(.97)}60%{filter:brightness(1.04)}80%{filter:brightness(.98)}}
 .stage::after{content:"";position:absolute;inset:0 0 auto 0;height:42%;background:linear-gradient(rgba(20,8,28,.75),transparent);z-index:0;pointer-events:none}
 .stage{position:relative;border-radius:6px;padding:10px 12px 0;background:#120c12;box-shadow:0 8px 24px rgba(0,0,0,.6);overflow:hidden}
 .stage::before{content:"";position:absolute;inset:0;border-radius:6px;box-shadow:inset 0 0 0 1px rgba(212,175,55,.6),inset 0 0 0 3px #0b080d,inset 0 0 0 4px rgba(212,175,55,.25);z-index:2;pointer-events:none}
@@ -43,8 +41,9 @@ main.hurt{animation:hurt .4s}
 .bar{height:12px;border-radius:999px;background:rgba(0,0,0,.4);overflow:hidden;margin-top:6px}
 .bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--red),#ff8a5c);transition:width .35s}
 .pw{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:var(--muted)}.pw img{width:16px;height:16px}.pw .bar{flex:1;height:7px;margin:0}.pw .bar i{background:linear-gradient(90deg,#8c0f22,#ff6b4a)}
-.stage.rage{box-shadow:inset 0 0 0 3px var(--red),0 0 26px rgba(255,77,94,.55);animation:pulse 1.2s infinite}
-@keyframes pulse{50%{box-shadow:inset 0 0 0 3px #ff9aa4,0 0 34px rgba(255,77,94,.8)}}
+.stage.rage{box-shadow:inset 0 0 0 3px var(--red),0 0 26px rgba(255,77,94,.55)}
+#rageGlow{display:none;position:absolute;inset:0;border-radius:6px;pointer-events:none;z-index:3;box-shadow:inset 0 0 0 3px #ff9aa4,0 0 34px rgba(255,77,94,.8);opacity:0;animation:glowp 1.2s infinite}.stage.rage #rageGlow{display:block}
+@keyframes glowp{50%{opacity:1}}
 .stage.rage #foe:not(.down) .fig{filter:drop-shadow(0 0 10px #ff4d5e) saturate(1.5)}
 .armrow{display:flex;align-items:center;gap:6px;margin-top:5px;font-size:12px;color:var(--muted);flex-wrap:wrap}
 .segs{flex:1;min-width:80px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}
@@ -99,8 +98,8 @@ canvas{display:block;width:100%;height:100%;border-radius:3px;touch-action:none}
 .g.fire{animation:fire .5s}
 .g.sip{animation:sip .25s}
 @keyframes sip{50%{box-shadow:inset 0 0 0 1px rgba(212,175,55,.9),0 0 12px rgba(255,220,140,.5)}}
-.g.full{background:#6a3a1a;box-shadow:0 0 0 2px var(--gold),0 0 14px rgba(255,209,102,.7);animation:ready 1s infinite}
-@keyframes ready{50%{box-shadow:0 0 0 2px #fff3c4,0 0 22px rgba(255,209,102,.95)}}
+.g.full{background:#6a3a1a;box-shadow:0 0 0 2px var(--gold),0 0 14px rgba(255,209,102,.7)}
+.g.full::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:0 0 0 2px #fff3c4,0 0 22px rgba(255,209,102,.95);opacity:0;animation:glowp 1s infinite}
 .g.full .bar i{background:linear-gradient(90deg,#ffd166,#fff3c4)}
 @keyframes fire{50%{background:#fff3c4;transform:scale(1.08)}}
 .g:focus-visible{outline:2px solid var(--pink)}
@@ -165,3 +164,8 @@ button.btn:active{transform:translateY(2px);box-shadow:0 2px 0 #b8860b}
   padding:6px 14px 7px;border-radius:6px;background:rgba(20,8,18,.88);box-shadow:inset 0 0 0 1px #ff9ad5,0 0 18px rgba(255,154,213,.45);animation:prm 1.2s ease-in-out infinite}
 .prompt[hidden]{display:none}.prompt b{display:block;font-weight:normal;font-size:17px;color:#ffd1ea}.prompt span{font-size:12px;color:#d9b8c8}
 @keyframes prm{50%{box-shadow:inset 0 0 0 1px #ffd1ea,0 0 26px rgba(255,154,213,.75)}}
+/* low effects: switched on automatically when frames run slow */
+.lowfx #rageGlow,.lowfx .g.full::after{animation:none;opacity:.5}
+.lowfx .stage.rage #foe:not(.down) .fig{filter:saturate(1.5)}
+.lowfx .pw .bar.full i{animation:none;filter:brightness(1.3)}
+@keyframes tgtlow{50%{filter:brightness(1.5)}}.lowfx #foe canvas.target{animation:tgtlow .7s infinite}

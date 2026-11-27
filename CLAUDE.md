@@ -92,9 +92,16 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
   under a virtual clock (`vclock.js`) and reports errors/stuck states. It expects a copy at
   `/tmp/gs_stress2` with `stress.patch` applied to `js/game.js` (adds `window.__api`), and Chrome
   at `/usr/bin/google-chrome`. Adjust paths to your environment.
-- Performance: `tools/tests/perf.py` uses CDP CPU throttling (×1/×4/×6) on a phone-sized
-  viewport. Last result: busy moments ~20 fps at 4× throttle → a performance pass is pending
-  (pre-rendered glows, idle redraw pause, lower fx DPR, backdrop-only flicker, auto low-effects).
+- Performance: `node tools/tests/perf.js` (Node Playwright; injects `perf_hook.js`) measures idle and busy
+  frames at CPU throttle ×1/×4/×6 on a phone-sized viewport. `LOW=1` forces low effects.
+  After the performance pass (headless, software rendering), mean frame ms:
+  ×4 idle 16.8, busy 25 (was 29 / 77); ×6 idle 16.8, busy 44, with low effects 27 (was 47 / 105).
+- Performance rules in `js/game.js` (see the "performance" block): board canvas DPR ≤2 (1.5 in low effects),
+  fx overlay DPR ≤1.5 (1), glows are pre-rendered sprites/halos (no live shadowBlur or ctx.filter),
+  the board redraws only while something moves (plus a 2 fps fallback), particles are capped,
+  the backdrop torch redraws at 12 fps, CSS glow pulses animate opacity only.
+  `lowFx` switches on by itself after ~60 busy frames averaging over 30 ms (halved particles,
+  no glow rims, `body.lowfx` CSS). Keep new effects within these rules.
 
 ## Audio tools (`tools/music`)
 - `make_gothic.py` → base MIDI (melody/harmony); `make_rage.py` → rage layer MIDI.

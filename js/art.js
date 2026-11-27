@@ -219,8 +219,10 @@ function backdrop(e){
   x.fillStyle='#6a5030';x.fillRect(SCX-3,SCY-2,7,1);x.fillStyle='#4a3420';x.fillRect(SCX-2,SCY+1,5,1);
   return c;
 }
+let bgAcc=1;
+// the torch flickers at a low frame rate (12 fps, 8 in low effects): cheap, and it suits the pixel art
 function drawBackdrop(dt){
-  const bg=$('bg');if(!bgStatic||!bg)return;flameT+=dt;const x=bg.getContext('2d');x.imageSmoothingEnabled=false;x.drawImage(bgStatic,0,0);
+  const bg=$('bg');if(!bgStatic||!bg)return;flameT+=dt;bgAcc+=dt;if(bgAcc<(typeof lowFx!=='undefined'&&lowFx?1/8:1/12))return;bgAcc=0;const x=bg.getContext('2d');x.imageSmoothingEnabled=false;x.drawImage(bgStatic,0,0);
   const fl=.85+.15*Math.sin(flameT*11)+.08*Math.sin(flameT*23.7),R=34*fl;
   const gl=x.createRadialGradient(SCX,SCY-6,2,SCX,SCY-6,R);gl.addColorStop(0,'rgba(255,170,70,.55)');gl.addColorStop(.4,'rgba(255,110,40,.18)');gl.addColorStop(1,'rgba(255,80,30,0)');
   x.globalCompositeOperation='lighter';x.fillStyle=gl;x.fillRect(0,0,BW,BH);x.globalCompositeOperation='source-over';
