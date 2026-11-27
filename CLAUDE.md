@@ -57,7 +57,8 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
 - 7×7 board, HuniePop-style drag: slide a gem any distance along its row/column; no match = snap back.
 - Gems: Diamond (enemy gem, dark matte purple), Shield (blue), Plus (green, heals you), Coin
   (gold coin), Square (purple), Star (pink).
-- Enemy HP = right board border; player HP = left border. Matches damage enemy HP. Armour comes off
+- Enemy HP = right board border; player HP = left border. Matches damage enemy HP (`DMG` 2.5 per gem,
+  lowered from 3 so armour has time to come off without fights dragging). Armour comes off
   only from slingshot hits, perfect force hits and Crush gems (buckets no longer damage the enemy). Armour comes off in order: shoulders, helmet, lower chest,
   upper chest; each piece has its own weakness/resistance. Goal: strip all armour before the
   enemy dies (bonus 300 per piece + 1000 for a full strip; less reward with armour left).
@@ -75,7 +76,7 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
 - Rage at one armour piece left: enemy destroys ~30% of gems, refilled with Plus gems;
   music crossfades to the rage version.
 - **Force gem** (4+ in a line): tap clears 1 above/below; hold to charge a ring, release in the
-  perfect band (fizzles if overshot). Perfect: up to 5 diamonds destroyed, all armour −8–12%,
+  perfect band (fizzles if overshot). Perfect: up to 5 diamonds destroyed, all armour −12–16% (`FORCE_CUT`),
   chain strikes on consecutive turns +2% each up to 5. Gives 8–12 gold, delays the enemy.
   Drag horizontally only; other gems slide through it on both axes. No gravity.
 - **Crush gem** (`CR`): every 2nd perfect force hit in a row (chain links 2 and 4) earns one. Once that
@@ -101,6 +102,12 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
   Star: **Star power** instead of an armour attack — tap any non-special gem (diamonds allowed);
   up to 5 random gems of that kind shatter at 1.25× value; free action; tap the bucket again
   to cancel.
+- **Items** (`ITEMS` in config.js): Healing draught 70g (+35 HP), Hourglass 80g (enemy waits one more
+  turn), Holy water 100g (every diamond shatters), Warhammer 150g (a Crush gem drops onto a random cell).
+  Bought from the merchant after a win (spare/kill screen → Merchant) or mid-battle from the satchel's
+  + button at double price (`EMERGENCY_MULT`). Carried in a 3-slot satchel under the buckets (saved in
+  `gothicmatchr-satchel`); tap one on your turn to use it as a free action. A useless use (full HP, no
+  diamonds) shakes the slot with a clunk and keeps the item. Prices assume ~155–210 gold per battle.
 - Signposting cues (no explanatory text): tapping a bucket that isn't ready shakes it with a
   dull clunk (`Sfx.clunk`); touching the board on the enemy's turn shakes it with a lower clunk;
   bucket bonuses fly as icons into the Ward/Pierce tags, gold counter (5 coins) and HP bar (3 plus
@@ -133,8 +140,9 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
   (`balance_bot.js`) on the virtual clock and prints turns, damage taken, hits, falls and outcome.
   After the difficulty pass (16 battles): 15/16 wins, enemy 4–8 turns per battle, avg hit 12–25,
   min HP mostly 15–60; before it the enemy got 0–4 turns and the player rarely dropped below 70.
-- After removing bucket damage (12 battles): 11/12 wins but only 0–1 armour pieces stripped (was 2–4);
-  matches kill the enemy first and rage rarely triggers. Balance follow-up pending with Jamil.
+- After removing bucket damage (12 battles): 11/12 wins but only 0–1 armour pieces stripped (was 2–4).
+  With `DMG` 2.5 and `FORCE_CUT` 12–16%: 12/12 wins, 0–4 pieces (avg ~1.3), ~20 turns (was ~18), so fights
+  stay fast; the bot earns 155–210 gold per battle. The report now includes Crush uses and gold earned.
 - Stress bot: `tools/tests/stress.py` plays thousands of actions on a patched copy of the game
   under a virtual clock (`vclock.js`) and reports errors/stuck states. It expects a copy at
   `/tmp/gs_stress2` with `stress.patch` applied to `js/game.js` (adds `window.__api`), and Chrome

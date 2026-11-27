@@ -3,7 +3,7 @@
 try{for(const k of['gold','best','vol','music']){const o=localStorage.getItem('gemslide-'+k);if(o!==null){if(localStorage.getItem('gothicmatchr-'+k)===null)localStorage.setItem('gothicmatchr-'+k,o);localStorage.removeItem('gemslide-'+k)}}}catch(e){}
 // Board: N x N grid. Gem types: 0 Diamond (enemy), 1 Shield, 2 Plus (heal), 3 Coin, 4 Square, 5 Star. SP = force gem, SL = slingshot gem.
 const TEST_SLINGS=true;// testing: start each battle with 3 slingshot gems
-const N=7,TYPES=6,SP=6,SL=7,CR=8,POP=0.5,MAXHP=100,EVERY=2,DMG=3,RED=0,GREEN=2,COIN=3,STAR=5,COIN_GOLD=1,ATK=[1,3,4,5];
+const N=7,TYPES=6,SP=6,SL=7,CR=8,POP=0.5,MAXHP=100,EVERY=2,DMG=2.5,RED=0,GREEN=2,COIN=3,STAR=5,COIN_GOLD=1,ATK=[1,3,4,5];
 const COLORS=[['#7a6090','#4e3862','#2a1a38'],['#8fd3ff','#1f7ae0','#0e3f86'],['#9df2a8','#21b34a','#0d6428'],['#ffe58a','#f5a623','#9a5b06'],['#d9a8ff','#8b3ee0','#4b1586'],['#ffb3d9','#ff4fa0','#a0105a']];
 const GEMS=[
  {n:'Diamond',pts:10},
@@ -12,10 +12,17 @@ const GEMS=[
  {n:'Coin',pts:15,cap:165,atk:'Coin blast',dmg:27,fx:'3 hits of 9 armour damage'},
  {n:'Square',pts:20,cap:220,atk:'Square blast',dmg:33,fx:'33 armour damage'},
  {n:'Star',pts:25,cap:275,atk:'Star blast',dmg:40,fx:'40 armour damage'}];
+// Items: bought with gold from the merchant after a win (price p) or mid-battle from the satchel at EMERGENCY_MULT x.
+// Carried in a satchel of SATCHEL slots; using one is a free action on your turn.
+const ITEMS={draught:{n:'Healing draught',p:70,d:'Restores 35 HP'},glass:{n:'Hourglass',p:80,d:'The enemy waits one more turn'},
+  holy:{n:'Holy water',p:100,d:'Every diamond on the board shatters'},hammer:{n:'Warhammer',p:150,d:'A Crush gem drops onto the board'}};
+const SATCHEL=3,EMERGENCY_MULT=2,DRAUGHT_HP=35;
 // Crush gem: made by every 2nd perfect force hit in a row; cuts the current armour piece by this share of its
 // total (perfect release / outside the band / overshoot). Its ring charges at force-chain stage CRUSH_STAGE speed.
 const CRUSH_CUT={perfect:.5,weak:.25,fizzle:.1},CRUSH_STAGE=3;
 // Force gem charge: hold time to start, full charge seconds, perfect window size, diamonds cleared on a perfect, chain strike limits.
+// Perfect force hit: every armour piece loses FORCE_CUT[0]..FORCE_CUT[1] % (+2% per chain link).
+const FORCE_CUT=[12,16];
 const CHAIN_MAX=5,CHAIN_SPEEDUP=.06,HOLD=.28,CHARGE=1.6,VR=3.4,PERFECT=.08,PERFECT_REDS=5;
 // Falling gems: gravity (cells/s^2), top speed (cells/s), bounce kept on landing (0-1).
 const FALL_G=30,FALL_MAX=13,FALL_BOUNCE=.28;

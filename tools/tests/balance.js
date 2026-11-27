@@ -9,10 +9,10 @@ const ix=path.join(dst,'index.html');fs.writeFileSync(ix,fs.readFileSync(ix,'utf
 (async()=>{const b=await chromium.launch();const rows=[];
   for(let fi=0;fi<4;fi++)for(let k=0;k<N;k++){const pg=await b.newPage({viewport:{width:393,height:780}});
     await pg.addInitScript({path:path.join(__dirname,'vclock.js')});await pg.goto('file://'+ix);
-    await pg.evaluate(f=>{window.__tick(20);fi=f;battle();Object.assign(__bal,{pt:0,et:0,falls:0,minHp:100,taken:0,foeHeal:0,maxHit:0,hits:[]})},fi);
+    await pg.evaluate(f=>{window.__tick(20);fi=f;battle();Object.assign(__bal,{pt:0,et:0,falls:0,minHp:100,taken:0,foeHeal:0,maxHit:0,hits:[],gold0:money})},fi);
     let res='timeout';for(let s=0;s<6000;s++){await pg.evaluate(()=>{__tick(8);__botAct()});
       const st=await pg.evaluate(()=>state);if(st==='over'){res=await pg.evaluate(()=>hp<=0?'LOSE':'win '+armDur.filter(d=>d<=0).length+'/4 armour');break}}
-    const r=await pg.evaluate(()=>({...__bal,hits:undefined,avgHit:__bal.hits.length?Math.round(__bal.hits.reduce((a,b)=>a+b,0)/__bal.hits.length):0,err:window.__err||''}));
+    const r=await pg.evaluate(()=>({...__bal,gold:money-__bal.gold0,hits:undefined,avgHit:__bal.hits.length?Math.round(__bal.hits.reduce((a,b)=>a+b,0)/__bal.hits.length):0,err:window.__err||''}));
     rows.push({foe:['Varro','Morwen','Oren','Dask'][fi],res,...r});await pg.close()}
   await b.close();fs.rmSync(dst,{recursive:true,force:true});
-  for(const r of rows)console.log(`${r.foe.padEnd(7)} ${r.res.padEnd(16)} myTurns ${String(r.pt).padStart(3)} foeTurns ${String(r.et).padStart(3)} dmgTaken ${String(r.taken).padStart(4)} avgHit ${String(r.avgHit).padStart(3)} maxHit ${String(r.maxHit).padStart(3)} falls ${r.falls} minHp ${r.minHp} foeHealed ${r.foeHeal} crush ${r.crush||0}${r.err?' ERR '+r.err.slice(0,200):''}`)})();
+  for(const r of rows)console.log(`${r.foe.padEnd(7)} ${r.res.padEnd(16)} myTurns ${String(r.pt).padStart(3)} foeTurns ${String(r.et).padStart(3)} dmgTaken ${String(r.taken).padStart(4)} avgHit ${String(r.avgHit).padStart(3)} maxHit ${String(r.maxHit).padStart(3)} falls ${r.falls} minHp ${r.minHp} foeHealed ${r.foeHeal} crush ${r.crush||0} gold ${r.gold}${r.err?' ERR '+r.err.slice(0,200):''}`)})();

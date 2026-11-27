@@ -18,7 +18,7 @@
    state='lackey';say('lackey',true);const L=$('lackey');if(!L.firstChild)L.appendChild(archerArt());
    L.classList.remove('on','shoot');void L.offsetWidth;L.classList.add('on');
    pop('<span style="color:#c8a070">'+LACKEY.name+' the archer!</span><small>Varro summons his lackey</small>','foe');
-@@ -762,3 +762,15 @@
+@@ -796,3 +796,15 @@
      const hl=Math.min(Math.round(roundMax*.2),MAXHP-hp);if(hl>0){hp+=hl;flyIcon(b,$('vbMe'),icons[GREEN],3,renderMe)}
      renderGauges();if(foeHp<=0)win();else if(rageQueued){rageQueued=false;startRage()}}));
  const ro=new ResizeObserver(resize);ro.observe(cv);resize();sizeFx();battle();requestAnimationFrame(frame);

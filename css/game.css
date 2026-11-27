@@ -180,3 +180,15 @@ button.btn:active{transform:translateY(2px);box-shadow:0 2px 0 #b8860b}
 .mult.l3{font-size:24px}.mult.l4{font-size:28px}.mult.l5{font-size:32px}
 .mult.kick{animation:kick .35s}@keyframes kick{30%{transform:scale(1.4)}}
 main.slam{animation:slam .5s}@keyframes slam{0%,100%{transform:none}12%{transform:translate(-10px,5px)}28%{transform:translate(9px,-4px)}45%{transform:translate(-6px,2px)}65%{transform:translate(3px,-1px)}}
+.satchel{display:flex;gap:8px;justify-content:center;align-items:center;margin:8px 0 2px}
+.slot{all:unset;box-sizing:border-box;width:42px;height:42px;border-radius:6px;background:#0f0b10;box-shadow:inset 0 0 0 1px rgba(212,175,55,.5),0 2px 4px rgba(0,0,0,.5);display:grid;place-items:center;cursor:pointer}
+.slot img{width:30px;height:30px;image-rendering:pixelated}.slot.empty{opacity:.45;cursor:default}
+.shopbtn{all:unset;box-sizing:border-box;width:34px;height:34px;border-radius:50%;margin-left:4px;text-align:center;line-height:32px;font-size:22px;color:#2a0d22;background:radial-gradient(circle at 35% 35%,#fff3c4,#d4af37 55%,#8a6a10);box-shadow:0 2px 0 #8a6a10;cursor:pointer}
+.over.shopping{justify-content:flex-start;overflow-y:auto;gap:10px}
+.shop{display:flex;flex-direction:column;gap:8px;width:100%;max-width:340px}
+.item{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.35);border-radius:8px;padding:8px;text-align:left;box-shadow:inset 0 0 0 1px rgba(212,175,55,.25)}
+.item img{width:36px;height:36px;image-rendering:pixelated;flex:none}.item>div{flex:1;min-width:0}.item b{display:block;font-weight:400;font-size:16px}.item small{display:block;font-size:12px;color:var(--muted)}
+button.btn.buy{padding:6px 14px;min-height:40px;font-size:16px;flex:none}button.btn.buy::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff3c4,#8a6a10);margin-right:5px}
+button.btn:disabled{opacity:.4;box-shadow:none}.purse{font-size:15px}
+.over.shopping{padding:8px 12px;gap:5px}.over.shopping h3{font-size:20px}.over.shopping .purse{font-size:14px}.over.shopping .item{padding:5px 8px;gap:8px}.over.shopping .item img{width:30px;height:30px}.over.shopping .shop{gap:5px}
+.over.shopping .item small{font-size:11px;line-height:1.2}.over.shopping .btn{min-height:40px;padding:8px 18px}

@@ -184,7 +184,7 @@ function afterTurn(){
       phase=prev;combo=0;state='replayWait';setTimeout(()=>{if(state==='replayWait'){state='idle';afterTurn()}},700)},900);return}
   if(phase==='enemy'&&power>=foe.cap&&!summoned){summoned=true;power-=foe.cap;renderFoe();if(foe.lackey)return runLackey();hurtMe(foe.big,'Power attack!')}
   if(phase==='enemy'){phase='player';curseNow=false;summoned=false}
-  else{const used=pendingTurn;pendingTurn=false;if(used){turns--;quiet++}if(delayQ){turns=Math.min(MAX_TURNS,turns+delayQ);delayQ=0;const tb=$('turns');tb.classList.remove('bump');void tb.offsetWidth;tb.classList.add('bump')}
+  else{const used=pendingTurn;pendingTurn=false;if(used){turns--;quiet++}if(delayQ){turns=Math.max(turns,Math.min(MAX_TURNS,turns+delayQ));delayQ=0;const tb=$('turns');tb.classList.remove('bump');void tb.offsetWidth;tb.classList.add('bump')}
     if(turns<=0||quiet>=QUIET_MAX){turns=EVERY;quiet=0;renderFoe();return enemyMove()}}
   renderFoe();
   if(!hasMove()){floats.push({s:'Shuffle!',x:N/2,y:N/2,life:1.2});
@@ -281,10 +281,44 @@ $('over').addEventListener('click',e=>{
   const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;
   if(act==='spare'||act==='kill'){
     $('foe').classList.add(act==='spare'?'spared':'killed');
-    overlay(`<h3>${act==='spare'?'Spared':'Slain'}</h3><p>${act==='spare'?foe.spare:foe.kill}</p><div class="btns"><button class="btn" data-act="next">Next battle</button></div>`);
-  }else if(act==='next'){fi=(fi+1)%FOES.length;battle()}
+    overlay(`<h3>${act==='spare'?'Spared':'Slain'}</h3><p>${act==='spare'?foe.spare:foe.kill}</p><div class="btns"><button class="btn alt" data-act="merchant">Merchant</button><button class="btn" data-act="next">Next battle</button></div>`);
+  }else if(act==='next'){$('over').classList.remove('shopping');fi=(fi+1)%FOES.length;battle()}
+  else if(act==='merchant')shop(false);
+  else if(act==='buy')buy(a.dataset.k,a);
+  else if(act==='close'){$('over').classList.remove('on','shopping')}
   else if(act==='retry'){score=battleScore;battle()}
 });
+
+/* ---------- items: satchel + merchant ---------- */
+let satchel=[];try{satchel=JSON.parse(localStorage.getItem('gothicmatchr-satchel')||'[]').filter(k=>ITEMS[k]).slice(0,SATCHEL)}catch(e){}
+const itemIcons={};for(const k in ITEMS)itemIcons[k]=itemArt(k).toDataURL();
+function saveSatchel(){try{localStorage.setItem('gothicmatchr-satchel',JSON.stringify(satchel))}catch(e){}}
+function renderSatchel(){const el=$('satchel');let h='';
+  for(let i=0;i<SATCHEL;i++){const k=satchel[i];h+=k?`<button class="slot" data-i="${i}" aria-label="${ITEMS[k].n}"><img src="${itemIcons[k]}" alt=""></button>`:'<span class="slot empty"></span>'}
+  el.innerHTML=h+'<button class="shopbtn" id="shopBtn" aria-label="Buy items">+</button>'}
+// the merchant (between battles, normal price) or the satchel shop (mid-battle, EMERGENCY_MULT x)
+function shop(inBattle){const m=inBattle?EMERGENCY_MULT:1;let rows='';
+  for(const k in ITEMS){const it=ITEMS[k],p=it.p*m,can=money>=p&&satchel.length<SATCHEL;
+    rows+=`<div class="item"><img src="${itemIcons[k]}" alt=""><div><b>${it.n}</b><small>${it.d}</small></div><button class="btn buy" data-act="buy" data-k="${k}" data-p="${p}" ${can?'':'disabled'}>${p}</button></div>`}
+  overlay(`<h3>${inBattle?'Satchel':'The merchant'}</h3><p class="purse"><span class="coin">Gold <b>${money}</b></span> · ${satchel.length}/${SATCHEL} carried</p><div class="shop">${rows}</div><div class="btns">${inBattle?'<button class="btn alt" data-act="close">Back to the fight</button>':'<button class="btn" data-act="next">Next battle</button>'}</div>`);
+  $('over').classList.add('shopping');$('over').dataset.battle=inBattle?1:''}
+function buy(k,btn){const p=+btn.dataset.p;if(money<p||satchel.length>=SATCHEL){nudge(btn);Sfx.clunk();return}
+  addMoney(-p);satchel.push(k);saveSatchel();Sfx.gold(false);const slotEl=$('satchel');
+  flyIcon(btn,slotEl,itemIcons[k],1,renderSatchel);shop(!!$('over').dataset.battle)}
+function useItem(i,el){const k=satchel[i];if(!k)return;
+  if(state!=='idle'||locked||drag){nudge(el);Sfx.clunk(locked);return}
+  let ok=true;
+  if(k==='draught'){if(hp>=MAXHP)ok=false;else{hp=Math.min(MAXHP,hp+DRAUGHT_HP);flyIcon(el,$('vbMe'),icons[GREEN],3,renderMe);Sfx.match(4)}}
+  else if(k==='glass'){turns=Math.min(EVERY+1,turns+1);quiet=Math.max(0,quiet-1);renderFoe();flash($('turns'),'bump');Sfx.forge()}
+  else if(k==='holy'){const cells=new Set();for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(grid[r][c].t===RED)cells.add(r*N+c);
+    if(!cells.size)ok=false;else{Sfx.gold(true,2);cells.forEach(q=>pixels(q%N+.5,Math.floor(q/N)+.5,['#e8f2ff','#8fd3ff','#ffffff'],8,.7));clearLog();finishBlast(cells,0,N/2,N/2,true,false,true)}}
+  else if(k==='hammer'){const spots=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(grid[r][c].t<SP)spots.push([r,c]);
+    if(!spots.length)ok=false;else{const[r,c]=spots[Math.floor(Math.random()*spots.length)];dropCrush({r,c})}}
+  if(!ok){nudge(el);Sfx.clunk();return}
+  satchel.splice(i,1);saveSatchel();renderSatchel();buzz(20)}
+$('satchel').addEventListener('click',e=>{const s=e.target.closest('.slot[data-i]');if(s)return useItem(+s.dataset.i,s);
+  if(e.target.closest('#shopBtn')){if(state!=='idle'||locked){nudge($('shopBtn'));Sfx.clunk(locked);return}shop(true)}});
+renderSatchel();
 
 /* ---------- board ---------- */
 const rnd=()=>Math.floor(Math.random()*TYPES);
@@ -474,7 +508,7 @@ function burstAt(r0,c0,rad,ok,perfect){
     for(const g of gs)if(g.t<TYPES)pixels(g.x+.5,g.y+.5,COLORS[g.t],4,.6);
     floats.push({s:(perfect?'PERFECT! ':'')+'Burst '+rad+'!'+(n>1?' Chain x'+n:''),x:c0+.5,y:r0-.3,life:1.6});flinch();buzz(perfect?[60,40,120]:90);shake();
     if(perfect){reds.forEach(k=>pixels(k%N+.5,Math.floor(k/N)+.5,COLORS[RED],10,.8));
-      chainN=chainN+1;if(chainN===1)chainBase=8+Math.random()*4;if(chainN%2===0)crushQ={r:r0,c:c0};const pct=chainBase+2*(chainN-1);
+      chainN=chainN+1;if(chainN===1)chainBase=FORCE_CUT[0]+Math.random()*(FORCE_CUT[1]-FORCE_CUT[0]);if(chainN%2===0)crushQ={r:r0,c:c0};const pct=chainBase+2*(chainN-1);
       let tot=0;const broke=[];armDur.forEach((d,i)=>{if(d<=0)return;Scars.armour(i,false);const hit=Math.round(foe.arm[i][2]*pct/100);armDur[i]=Math.max(0,d-hit);tot+=Math.min(d,hit);if(armDur[i]<=0)broke.push(PIECES[i])});
       if(!rage&&piece()===3){rage=true;rageQueued=true;$('stage').classList.add('rage')}
       boardDirty=true;

@@ -40,6 +40,16 @@ function gemArt(t){
     x.fillStyle=mix(l,'#ffffff',.35);x.fillRect(sx+2,sy,1,1)}
   crisp(c,[20,10,18]);return c;
 }
+// item icons (24px pixel art): green draught flask, holy water vial, warhammer, hourglass
+function itemArt(k){const c=document.createElement('canvas');c.width=c.height=GP;const x=c.getContext('2d'),R=(f,a,b,w,h)=>{x.fillStyle=f;x.fillRect(a,b,w,h)};
+  if(k==='draught'){x.fillStyle='#cfe8ff';x.beginPath();x.arc(12,15,7.5,0,7);x.fill();R('#cfe8ff',9,4,6,6);
+    x.fillStyle='#21b34a';x.beginPath();x.arc(12,15.5,6,0,Math.PI);x.fill();R('#21b34a',6,14,12,2);R('#9df2a8',8,14,4,1);R('#7a4a22',9,2,6,3);R('#ffffff',8,11,2,3)}
+  else if(k==='holy'){R('#d8e8f4',9,5,6,15);R('#8fd3ff',10,10,4,9);R('#1f7ae0',10,17,4,2);R('#c9d0d8',8,3,8,2);R('#7d8792',10,1,4,2);R('#ffffff',11.5,11,1,5);R('#ffffff',10.5,12.5,3,1);R('#ffffff',9.5,6,1,3)}
+  else if(k==='hammer'){x.save();x.translate(12,12);x.rotate(-Math.PI/4);R('#5a3418',-1,-3,2.4,14);R('#c9a23a',-1.2,6,2.8,1.4);R('#d8dde4',-6,-8,12,5);R('#7d8792',-6,-4,12,1.5);R('#ffffff',-5.5,-7.5,4,1);x.restore()}
+  else{R('#c9a23a',5,2,14,2);R('#c9a23a',5,20,14,2);R('#7a5a20',6,4,1.5,16);R('#7a5a20',16.5,4,1.5,16);
+    x.fillStyle='#e8f2ff';x.beginPath();x.moveTo(8,4);x.lineTo(16,4);x.lineTo(12.6,12);x.lineTo(16,20);x.lineTo(8,20);x.lineTo(11.4,12);x.closePath();x.fill();
+    x.fillStyle='#f5a623';x.beginPath();x.moveTo(9.5,5.5);x.lineTo(14.5,5.5);x.lineTo(12,10);x.closePath();x.fill();x.beginPath();x.moveTo(12,15);x.lineTo(15,19);x.lineTo(9,19);x.closePath();x.fill();R('#f5a623',11.6,11,.8,4)}
+  crisp(c,[20,10,18]);return c}
 function gemCanvas(t,px){
   const o=document.createElement('canvas');o.width=o.height=px;const x=o.getContext('2d');x.imageSmoothingEnabled=false;
   const g=Math.round(px*.07);x.drawImage(gemArt(t),g,g,px-2*g,px-2*g);return o;
