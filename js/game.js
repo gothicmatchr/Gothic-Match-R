@@ -77,6 +77,17 @@ function addMoney(d){money=Math.max(0,money+d);hud();try{localStorage.setItem('g
 function hud(){$('money').textContent=money}
 function pop(html,side){side=side||'me';const fd=$('feed-'+side);while(fd.children.length>=4)fd.lastChild.remove();const d=document.createElement('div');d.className='pop';d.innerHTML=html;fd.prepend(d)}
 function clearLog(){roundMax=MAXHP;$('feed-me').innerHTML='';$('feed-foe').innerHTML=''}
+// small shake on an element: "not yet"
+function flash(el,c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c);el.addEventListener('animationend',function f(e){if(e.target!==el)return;el.classList.remove(c);el.removeEventListener('animationend',f)})}
+function nudge(el){flash(el,'nope')}
+// icons arc from one element to another (compositor-only transform animation); done() runs when the last one lands
+function flyIcon(from,to,src,n,done){const a=from.getBoundingClientRect(),z=22;let left=n;
+  for(let i=0;i<n;i++){const im=document.createElement('img');im.src=src;im.className='flyi';im.alt='';
+    const sx=a.left+a.width/2-z/2+(n>1?(i-(n-1)/2)*8:0),sy=a.top+a.height*.3-z/2;im.style.left=sx+'px';im.style.top=sy+'px';document.body.appendChild(im);
+    const r=to.getBoundingClientRect(),dx=r.left+r.width/2-z/2-sx,dy=r.top+Math.min(r.height/2,40)-z/2-sy,lift=-Math.max(50,Math.abs(dx)*.25);
+    const an=im.animate([{transform:'translate(0,0) scale(1)'},{transform:`translate(${dx*.45}px,${dy*.45+lift}px) scale(1.35)`,offset:.45},{transform:`translate(${dx}px,${dy}px) scale(.7)`}],
+      {duration:620,delay:i*70,easing:'cubic-bezier(.4,0,.6,1)',fill:'backwards'});
+    an.onfinish=()=>{im.remove();flash(to,'bump');if(--left===0&&done)done()}}}
 function toast(s){$('toast').textContent=s;clearTimeout(toastT);toastT=setTimeout(()=>$('toast').textContent='',3500)}
 function buzz(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
 const _ga={};function glowA(h,a){let c=_ga[h];if(!c){const n=parseInt(h.slice(1),16);c=_ga[h]=[n>>16&255,n>>8&255,n&255]}return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a.toFixed(3)+')'}
@@ -303,7 +314,7 @@ function fill(){
 }
 function battle(){
   foe=FOES[fi];foeHp=foe.hp;hp=MAXHP;turns=EVERY;cursed=false;curseNow=false;gauge=Array(TYPES).fill(0);shown=Array(TYPES).fill(0);gq=[[],[],[],[],[],[]];gaugeWait=Array(TYPES).fill(0);power=0;pendingTurn=false;battleScore=score;
-  ammo=0;$('prompt').hidden=true;phase='player';forges=[];popExtra=0;delayQ=0;ward=0;lackeyQ=false;arrow=null;em=null;slashes=[];fxp=[];rings=[];preview=null;$('lackey').classList.remove('on','shoot');$('speech').classList.remove('on');sayT=0;noGauge=false;rage=false;charge=null;proj=null;chainN=0;replay=null;boxParts=[];dust=[];parts=[];rageQueued=false;armDur=foe.arm.map(a=>a[2]);rq=null;hl=null;combo=0;drag=null;floats=[];lastMoved=null;
+  ammo=0;phase='player';forges=[];popExtra=0;delayQ=0;ward=0;lackeyQ=false;arrow=null;em=null;slashes=[];fxp=[];rings=[];preview=null;$('lackey').classList.remove('on','shoot');$('speech').classList.remove('on');sayT=0;noGauge=false;rage=false;charge=null;proj=null;chainN=0;replay=null;boxParts=[];dust=[];parts=[];rageQueued=false;armDur=foe.arm.map(a=>a[2]);rq=null;hl=null;combo=0;drag=null;floats=[];lastMoved=null;
   $('foe').className='';buildFoe(foe);clearLog();lowSaid=false;setTimeout(()=>say('intro',true),700);$('stage').classList.remove('rage');
   $('over').classList.remove('on');fill();if(TEST_SLINGS)[[6,1],[6,3],[6,5]].forEach(([r,c])=>grid[r][c].t=SL);state='falling';renderFoe();renderMe();renderGauges();hud();
 }
@@ -361,7 +372,8 @@ function dustTick(dt){
   for(const p of dust){if(p.delay>0){p.delay-=dt;continue}p.life-=dt;if(p.settled){continue}
     if(p.free>0){p.free-=dt;p.vy+=g*.3*dt;const dr=Math.exp(-dt*3);p.vx*=dr;p.vy*=dr;p.x+=p.vx*dt;p.y+=p.vy*dt;continue}
     p.vy+=g*dt;p.vx+=((p.tx-p.x)*6-p.vx*2.2)*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;
-    if(p.y>=p.ty){if(p.bucket){p.life=0;const t=p.bt;if(shown[t]<gauge[t]){shown[t]+=p.v||(gauge[t]-shown[t])/Math.max(1,fly[t]);gd=true}fly[t]--;if(!p.bucket._sip||performance.now()-p.bucket._sip>120){p.bucket._sip=performance.now();p.bucket.classList.remove('sip');void p.bucket.offsetWidth;p.bucket.classList.add('sip')}}
+    if(p.y>=p.ty){if(p.bucket){p.life=0;const t=p.bt;if(shown[t]>=GEMS[t].cap){const bk=p.bucket,nw=performance.now();if(!bk._sp||nw-bk._sp>60){bk._sp=nw;burstFx(p.x,p.ty-cell*.15,['#fff3c4','#ffd166','#ffffff'],lowFx?3:5,cell*3.2);Sfx.spill()}}
+      else if(shown[t]<gauge[t]){shown[t]+=p.v||(gauge[t]-shown[t])/Math.max(1,fly[t]);gd=true}fly[t]--;if(!p.bucket._sip||performance.now()-p.bucket._sip>120){p.bucket._sip=performance.now();p.bucket.classList.remove('sip');void p.bucket.offsetWidth;p.bucket.classList.add('sip')}}
       else{p.y=p.ty-Math.random()*cell*.15;p.vy=0;p.vx=0;p.settled=true;p.life=Math.min(p.life,.7)}}}
   dust=dust.filter(p=>p.life>0);
   // safety net: if a bucket's total is ahead of its bar with no dust on the way for 1.5 s, catch up
@@ -379,13 +391,13 @@ function collapse(){
   state='falling';
 }
 // Star bucket power: tap a gem, then up to 5 random gems of that kind shatter at 1.25x value (free action).
-function startSelect(){state='select';$('prompt').hidden=false;Sfx.forge();pop('<span style="color:#ff9ad5">Star power!</span><small>Tap a gem: 5 of that kind will shatter</small>');}
+function startSelect(){state='select';Sfx.forge();pop('<span style="color:#ff9ad5">Star power!</span>');}
 function starPick(t,r0,c0){const all=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const g=grid[r][c];if(g&&g.t===t&&!g.pop&&g.dying===undefined)all.push(r*N+c)}
   for(let i=all.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[all[i],all[j]]=[all[j],all[i]]}
   const pick=all.slice(0,5);if(!pick.includes(r0*N+c0)&&pick.length===5&&all.includes(r0*N+c0))pick[4]=r0*N+c0;
   clearLog();Sfx.bucket();floats.push({s:'×1.25!',x:c0+.5,y:r0-.2,life:1.4});
   pop('<span style="color:#ff9ad5">'+pick.length+' '+GEMS[t].n+(pick.length===1?'':'s')+' shattered</span><small>Worth 1.25x</small>');
-  state='idle';$('prompt').hidden=true;finishBlast(pick,0,c0+.5,r0+.5,true,true,true,1.25)}
+  state='idle';finishBlast(pick,0,c0+.5,r0+.5,true,true,true,1.25)}
 function finishBlast(cells,bonus,x,y,keepSL,healGreens,free,mult){
   const gs=[];cells.forEach(k=>{const g=grid[Math.floor(k/N)][k%N];if(keepSL&&g.t===SL)return;g.pop=true;gs.push(g)});
   combo=1;resolve(gs,bonus,x,y,false,mult||1,healGreens);combo=0;
@@ -452,6 +464,9 @@ function endSling(hit){
   else floats.push({s:'Miss',x:N/2,y:.6,life:1.2});
   finishBlast(p.cells,20*p.cells.size+(hit?100:0),N/2,N/2,false,true,true);
 }
+// a weak pull: the band goes slack and wobbles back to rest
+let slacks=[];
+function slack(D){Sfx.snap();buzz(10);slacks.push({c:D.c,r:D.r,px:D.px,py:D.py,t:0})}
 function burstFx(x,y,cols,n,spd){if(lowFx)n=Math.ceil(n/2);for(let i=0;i<n;i++){if(fxp.length>=PCAP())break;const a=Math.random()*Math.PI*2,v=(.3+Math.random())*spd;fxp.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-spd*.3,life:.5+Math.random()*.6,s:3+Math.random()*5,col:cols[Math.floor(Math.random()*cols.length)]})}}
 function slingTick(dt){
   if(proj.hit){proj.hold-=dt;if(proj.hold<=0)endSling(true);return}
@@ -474,9 +489,9 @@ function slingTick(dt){
     else if(proj.vy>=0||proj.y>innerHeight)return endSling(false);
   }
 }
-function fxTick(dt){for(const sl of slashes)sl.t+=dt;slashes=slashes.filter(sl=>sl.t<.5);for(const p of fxp){p.vy+=cell*14*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt}fxp=fxp.filter(p=>p.life>0);for(const r of rings)r.t+=dt;rings=rings.filter(r=>r.t<.5)}
+function fxTick(dt){for(const k of slacks)k.t+=dt;slacks=slacks.filter(k=>k.t<.45);for(const sl of slashes)sl.t+=dt;slashes=slashes.filter(sl=>sl.t<.5);for(const p of fxp){p.vy+=cell*14*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt}fxp=fxp.filter(p=>p.life>0);for(const r of rings)r.t+=dt;rings=rings.filter(r=>r.t<.5)}
 function drawFx(){
-  const any=(drag&&drag.sling)||proj||slashes.length||dust.length||arrow||rings.length||fxp.length;
+  const any=slacks.length||(drag&&drag.sling)||proj||slashes.length||dust.length||arrow||rings.length||fxp.length;
   if(!any&&!fxDrawn)return;fxDrawn=!!any;
   fctx.clearRect(0,0,innerWidth,innerHeight);if(!any)return;fctx.imageSmoothingEnabled=false;
   const br=cv.getBoundingClientRect(),im=sprites[SL];if(!im)return;
@@ -486,6 +501,8 @@ function drawFx(){
     fctx.lineWidth=4;fctx.strokeStyle='#c98a4a';fctx.beginPath();fctx.moveTo(ox-cell*.45,oy-cell*.2);fctx.lineTo(gx,gy);fctx.lineTo(ox+cell*.45,oy-cell*.2);fctx.stroke();
     fctx.fillStyle='#6b3e1e';[[-.45],[.45]].forEach(([d])=>{fctx.beginPath();fctx.arc(ox+cell*d,oy-cell*.2,4,0,Math.PI*2);fctx.fill()});
     fctx.drawImage(im,gx-cell/2,gy-cell/2,cell,cell)}
+  for(const k of slacks){const ox=br.left+(k.c+.5)*cell,oy=br.top+(k.r+.5)*cell,e=Math.exp(-k.t*9)*Math.cos(k.t*34),gx=ox+k.px*e,gy=oy+k.py*e;
+    fctx.globalAlpha=Math.min(1,(.45-k.t)*6);fctx.lineWidth=3;fctx.strokeStyle='#c98a4a';fctx.beginPath();fctx.moveTo(ox-cell*.45,oy-cell*.2);fctx.lineTo(gx,gy);fctx.lineTo(ox+cell*.45,oy-cell*.2);fctx.stroke();fctx.globalAlpha=1}
   if(proj){fctx.save();proj.trail.forEach(([x,y],i)=>{const f=i/proj.trail.length;fctx.globalAlpha=f*.8;fctx.fillStyle=i%2?'#ffffff':'#7ff5e1';const z=cell*.42*f;fctx.fillRect(x-z/2,y-z/2,z,z)});fctx.restore();
     const z=cell*1.3*(proj.hit?1+Math.sin(proj.hold*40)*.12:1);
     fctx.save();fctx.translate(proj.x,proj.y);fctx.rotate(proj.spin);if(lowFx)fctx.drawImage(im,-z/2,-z/2,z,z);else{const gs=glowSprite(SL,'#7ff5e1',12),gz=z*(1+2*gs.pad/cell);fctx.drawImage(gs,-gz/2,-gz/2,gz,gz)}fctx.restore();
@@ -505,7 +522,7 @@ function drawFx(){
 function chargeTick(dt){
   if(drag&&drag.special&&!drag.axis&&!drag.cancel&&state==='idle'&&!charge){drag.hold=(drag.hold||0)+dt;if(drag.hold>=HOLD)startCharge()}
   if(state==='charging'){charge.f+=dt/(CHARGE*(1-CHAIN_SPEEDUP*chainN));const lv=burstSize(charge.f);if(lv!==charge.lv){charge.lv=lv;buzz(12)}
-    if(charge.f>=charge.T){drag=null;state='fizzle';fz=0;charge.g.dark=true;buzz(120);Sfx.fizzle();toast('Too far! Only a minimum burst.')}}
+    if(charge.f>=charge.T){drag=null;state='fizzle';fz=0;charge.g.dark=true;buzz(120);Sfx.fizzle()}}
   else if(state==='fizzle'){fz+=dt;charge.g.shrink=1-.45*Math.min(1,fz/.45);if(fz>=.55){const ch=charge;charge=null;burstAt(ch.r,ch.c,1,false)}}
   for(const p of parts){p.vy+=9*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt}parts=parts.filter(p=>p.life>0);
 }
@@ -528,6 +545,7 @@ function frame(now){
     if(g.jv||g.jy){g.jv=(g.jv||0)+(-220*(g.jy||0)-14*g.jv)*dt;g.jy=(g.jy||0)+g.jv*dt;if(Math.abs(g.jy)<.003&&Math.abs(g.jv)<.05){g.jy=0;g.jv=0}else settled=false}
     if(g.sq){g.sq=Math.max(0,g.sq-dt*1.6);if(g.sq)settled=false}
     g.x+=(tx-g.x)*kk;if(Math.abs(tx-g.x)>.01||Math.abs(ty-g.y)>.01)settled=false;else{g.x=tx;g.y=ty}
+    if(g.wig!==undefined){g.wig+=dt;settled=false;if(g.wig>.35)delete g.wig}
     if(g.grow!==undefined||g.forge!==undefined||g.dying!==undefined||g.shrink!==undefined)settled=false;
     if(g.grow!==undefined){g.grow+=dt;if(g.grow>.3)delete g.grow}
     if(g.forge!==undefined){g.forge+=dt;if(g.forge>.9)delete g.forge}
@@ -599,7 +617,7 @@ function draw(){
     if(drag&&!drag.enemy&&drag.g===g&&!drag.axis&&state==='idle')s*=1.18;
     if(g.shrink!==undefined)s*=g.shrink;else if(charge&&charge.g===g&&state==='charging')s*=1+Math.sin(charge.f*40)*.05+charge.f*.15;
     if(g.t===SL&&s===1&&!g.dark){slingBands(g,tug);slings.push(g)}
-    if(s>0){const q=g.sq||0,w=cell*s*(1+q*.6),h=cell*s*(1-q),yy=(g.y+(g.jy||0)+(g.t===SL&&s===1?tug*.09:0))*cell;ctx.drawImage((g.dark?darkSprites:sprites)[g.t],g.x*cell+(cell-w)/2,yy+cell-h-(cell-cell*s)/2,w,h)}}
+    if(s>0){const q=g.sq||0,w=cell*s*(1+q*.6),h=cell*s*(1-q),yy=(g.y+(g.jy||0)+(g.t===SL&&s===1?tug*.09:0))*cell;const wx=g.wig!==undefined?Math.sin(g.wig*50)*(1-g.wig/.35)*cell*.07:0;ctx.drawImage((g.dark?darkSprites:sprites)[g.t],g.x*cell+(cell-w)/2+wx,yy+cell-h-(cell-cell*s)/2,w,h)}}
   if(charge){const R1=VR*cell,m=.8*R1+6;
     const cx=Math.min(size-m,Math.max(m,(charge.c+.5)*cell)),cy=Math.min(size-m,Math.max(m,(charge.r+.5)*cell));
     const inZone=state==='charging'&&charge.f>=charge.T-PERFECT;
@@ -626,8 +644,8 @@ function draw(){
 /* ---------- input ---------- */
 function pos(e){const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]}
 cv.addEventListener('pointerdown',e=>{
-  if(locked){toast('Wait — it\'s the enemy\'s turn.');buzz(20);return}
-  if(state==='select'){const[x,y]=pos(e),c=Math.floor(x/cell),r=Math.floor(y/cell);if(c<0||r<0||c>=N||r>=N)return;const g=grid[r][c];if(!g||g.t>=TYPES){toast('Special gems can\'t be picked. Choose another gem.');return}starPick(g.t,r,c);return}
+  if(locked){Sfx.clunk(true);nudge(cv.parentNode);buzz(20);return}
+  if(state==='select'){const[x,y]=pos(e),c=Math.floor(x/cell),r=Math.floor(y/cell);if(c<0||r<0||c>=N||r>=N)return;const g=grid[r][c];if(!g||g.t>=TYPES){if(g)g.wig=0;Sfx.clunk();buzz(15);return}starPick(g.t,r,c);return}
   if(state!=='idle'||drag)return;const[x,y]=pos(e),c=Math.floor(x/cell),r=Math.floor(y/cell);if(c<0||r<0||c>=N||r>=N)return;
   drag={r,c,sx:x,sy:y,axis:null,d:0,g:grid[r][c],id:e.pointerId,special:grid[r][c].t===SP,sling:grid[r][c].t===SL,px:0,py:0};if(drag.sling)setTarget(true);cv.setPointerCapture(e.pointerId);buzz(8);
 });
@@ -640,23 +658,26 @@ cv.addEventListener('pointermove',e=>{
 function release(e){
   if(state==='charging'&&charge){drag=null;const ch=charge;charge=null;burstAt(ch.r,ch.c,burstSize(ch.f),true,ch.f>=ch.T-PERFECT);return}
   if(!drag||e.pointerId!==drag.id)return;const D=drag;drag=null;
-  if(D.sling){setTarget(false);if(slingOk(D)&&state==='idle')fireSling(D);else toast('Pull the slingshot gem down, aim, and let go.');return}
+  if(D.sling){setTarget(false);if(slingOk(D)&&state==='idle')fireSling(D);else slack(D);return}
   if(D.special&&!D.axis){const[x,y]=pos(e);if(!D.cancel&&(D.hold||0)<HOLD&&Math.hypot(x-D.sx,y-D.sy)<cell*.6&&state==='idle')burstAt(D.r,D.c,1,'tap');return}
   if(!D.axis)return;const t=Math.max(0,Math.min(N-1,Math.round(D.o+D.d/cell)));if(t===D.o)return;
   setLine(grid,D.axis,D.i,slide(lineOf(grid,D.axis,D.i),D.o,t));
   if(matchesIn(types(),'p').hit.size){clearLog();chainN=0;firstStep=true;lastMoved=D.g;pendingTurn=true;phase='player';combo=0;state='falling'}
   else{setLine(grid,D.axis,D.i,slide(lineOf(grid,D.axis,D.i),t,D.o));buzz(8)}
 }
-cv.addEventListener('pointerup',release);cv.addEventListener('pointercancel',e=>{if(drag&&drag.sling&&e.pointerId===drag.id&&!slingOk(drag)){setTarget(false);drag=null;return}release(e)});cv.addEventListener('lostpointercapture',e=>{if(drag&&e.pointerId===drag.id)release(e)});
+cv.addEventListener('pointerup',release);cv.addEventListener('pointercancel',e=>{if(drag&&drag.sling&&e.pointerId===drag.id&&!slingOk(drag)){setTarget(false);slack(drag);drag=null;return}release(e)});cv.addEventListener('lostpointercapture',e=>{if(drag&&e.pointerId===drag.id)release(e)});
 
 icons=[0,1,2,3,4,5].map(t=>gemCanvas(t,64).toDataURL());
 $('pwIcon').src=icons[RED];
 $('gauges').innerHTML=ATK.map(t=>`<button class="g" aria-label="${GEMS[t].n} gauge"><img src="${icons[t]}" alt=""><div class="bar"><i></i></div></button>`).join('');
 $('gauges').querySelectorAll('.g').forEach((b,j)=>b.addEventListener('click',()=>{const t=ATK[j],G=GEMS[t];
-    if(t===STAR&&state==='select'){gauge[t]=shown[t]=G.cap;state='idle';$('prompt').hidden=true;renderGauges();toast('Star power put away.');return}
-    if(ready(t)&&state==='idle'&&!locked){gauge[t]=shown[t]=0;gq[t]=[];if(t===STAR)startSelect();else fire(t);
-    if(t===4){ammo++;renderMe();pop('<span style="color:#7ff5e1">Piercing shot loaded!</span><small>Your next slingshot can hit any armour piece</small>')}
-    if(t===1){ward=1;renderMe();pop('<span style="color:#8fc8ff">Warded!</span><small>The next enemy attack is blocked</small>')}
-    if(t===3){money+=15;hud();try{localStorage.setItem('gemslide-gold',money)}catch(e){}pop('<span style="color:#d4af37">+15 gold</span><small>Coin bucket emptied</small>')}const hl=Math.min(Math.round(roundMax*.2),MAXHP-hp);if(hl>0){hp+=hl;renderMe();pop('<span style="color:#5fbf72">+'+hl+' HP</span><small>Bucket emptied</small>')}renderGauges();if(foeHp<=0)win();else if(rageQueued){rageQueued=false;startRage()}return}
-  toast(G.n+' ('+G.pts+' pts per gem) → '+G.atk+': '+G.fx+'. Firing also heals you 20%.'+(ready(t)?' Ready, tap to fire on your turn':''))}));
+    if(t===STAR&&state==='select'){gauge[t]=shown[t]=G.cap;state='idle';renderGauges();return}
+    if(!(ready(t)&&state==='idle'&&!locked)){nudge(b);Sfx.clunk(locked);buzz(15);return}  // not yet: the bucket shakes and clunks
+    gauge[t]=shown[t]=0;gq[t]=[];if(t===STAR)startSelect();else fire(t);
+    // bucket bonuses fly to where they land instead of being described
+    if(t===4){ammo++;const a=$('ammoTag'),was=!a.hidden;renderMe();if(!was)a.classList.add('due');flyIcon(b,a,icons[4],1,()=>a.classList.remove('due'))}
+    if(t===1){ward=1;const w=$('wardTag');renderMe();w.classList.add('due');flyIcon(b,w,icons[1],1,()=>w.classList.remove('due'))}
+    if(t===3){money+=15;try{localStorage.setItem('gemslide-gold',money)}catch(e){}flyIcon(b,$('money').parentNode,icons[3],5,hud)}
+    const hl=Math.min(Math.round(roundMax*.2),MAXHP-hp);if(hl>0){hp+=hl;flyIcon(b,$('vbMe'),icons[GREEN],3,renderMe)}
+    renderGauges();if(foeHp<=0)win();else if(rageQueued){rageQueued=false;startRage()}}));
 const ro=new ResizeObserver(resize);ro.observe(cv);resize();sizeFx();battle();requestAnimationFrame(frame);

@@ -3,3 +3,4 @@ __pycache__/
 *.mp3
 _site/
 .DS_Store
+tools/music/sfx_wav/

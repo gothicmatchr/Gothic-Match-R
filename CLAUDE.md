@@ -80,6 +80,12 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
   Star: **Star power** instead of an armour attack — tap any non-special gem (diamonds allowed);
   up to 5 random gems of that kind shatter at 1.25× value; free action; tap the bucket again
   to cancel.
+- Signposting cues (no explanatory text): tapping a bucket that isn't ready shakes it with a
+  dull clunk (`Sfx.clunk`); touching the board on the enemy's turn shakes it with a lower clunk;
+  bucket bonuses fly as icons into the Ward/Pierce tags, gold counter (5 coins) and HP bar (3 plus
+  gems), and those update when they land; dust landing in a full bucket sparks over the rim
+  (`Sfx.spill`); a weak slingshot pull makes the band go slack and wobble (`Sfx.snap`); in Star
+  power, tapping a special gem wiggles it and clunks. No opening tutorial toast, no Star prompt.
 - Multi-strike: matching 2–4 gem types in one move replays effects as separate rounds (up to 4).
 - Match chains: cascades from your own move show "Chain x2/x3…"; each link cuts the enemy's
   Summon/Power bar by 1/5.

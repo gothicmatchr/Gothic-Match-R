@@ -1,11 +1,13 @@
 """Match-3 style gem sound effects, synthesised. Bright, satisfying, rounded sounds,
 kept in the game's gothic palette: D harmonic minor notes, a dark hall reverb,
 organ/choir colour on the bigger effects."""
-import numpy as np, wave, subprocess, os
+import numpy as np, wave, subprocess, os, sys
 
 SR = 48000
 rng = np.random.default_rng(5)
-OUT = '/home/claude/music/sfx_new'
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+OUT = os.path.join(ROOT, 'tools', 'music', 'sfx_wav')  # intermediate wavs (not committed)
+ONLY = set(sys.argv[1:])  # optional: names to write, e.g. `python3 synth_sfx.py clunk snap spill`
 os.makedirs(OUT, exist_ok=True)
 
 def hz(name):
@@ -77,6 +79,7 @@ def reverb(x, d=.9, wet=.18, dark=3500):
     return out * (1 - wet) + y * wet * .5
 
 def finish(name, x, peak=.89, tail=.7):
+    if ONLY and name not in ONLY: return
     x = reverb(x, tail)
     nz = np.nonzero(np.abs(x) > 1e-4)[0]; x = x[:nz[-1] + 1] if len(nz) else x
     f = int(.01 * SR); x[-f:] *= np.linspace(1, 0, f)
@@ -85,7 +88,7 @@ def finish(name, x, peak=.89, tail=.7):
     with wave.open(wav, 'wb') as w:
         w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((x * 32767).astype(np.int16).tobytes())
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', wav, '-c:a', 'libopus', '-b:a', '64k',
-                    f'/home/claude/gemslide/audio/sfx/{name}.ogg'], check=True)
+                    os.path.join(ROOT, 'audio', 'sfx', f'{name}.ogg')], check=True)
     print(name, round(len(x) / SR, 2), 's')
 
 # MATCH: soft bell "pling" on D6. The game steps it up the D harmonic minor scale per gem.
@@ -136,3 +139,17 @@ pad = sum((np.sign(np.sin(2 * np.pi * hz(nm) * (1 + dt) * tt)) * .3 + np.sin(2 *
           for nm in ['D4', 'F4', 'A4', 'D5'] for dt in (-.004, 0, .004))
 pad = lp(pad, 1800) * env(tt, .04, d)
 finish('bucket', mix((imp, 0, 1), (pad, 0, .22), (bell(hz('D6'), .6, 2, 2), 0, .4), (bell(hz('A6'), .5, 2, 2), .04, .3), (sparkle(.4, 9), .1, .5)), tail=1.0)
+
+# CLUNK: "not yet" (bucket not full, special gem can't be picked, board locked at a lower pitch).
+# A dull, muffled wooden knock on D3 with a short low thud. No reverb sparkle: it should feel inert.
+knock = lp(marimba(hz('D3'), .18), 900)
+thud = sweep(110, 60, .1) * env(T(.1), .001, .1)
+finish('clunk', mix((knock, 0, .9), (thud, 0, .7), (lp(noise(.02), 1200) * env(T(.02), .0005, .02), 0, .25)), tail=.25)
+
+# SNAP: a weak slingshot pull. The band slackens: a short low pluck that bends down, no whoosh.
+sn = pluck(hz('A2'), .22) * env(T(.22), .001, .22)
+finish('snap', mix((lp(sn, 1800), 0, .9), (sweep(260, 120, .08) * env(T(.08), .002, .08), 0, .35)), tail=.3)
+
+# SPILL: dust landing in a full bucket sparks over the rim. Tiny, high, quick: two bell ticks and a fizz.
+fz = hp(noise(.08), 5000) * env(T(.08), .001, .08)
+finish('spill', mix((bell(hz('C#7'), .12, .8, 2.0), 0, .5), (bell(hz('D7'), .12, .8, 2.0), .03, .4), (fz, 0, .15)), tail=.3)
