@@ -323,6 +323,7 @@ function fill(){
   do{grid=[];for(let r=0;r<N;r++){grid.push([]);for(let c=0;c<N;c++){let t;do{t=rnd()}while((c>1&&grid[r][c-1].t===t&&grid[r][c-2].t===t)||(r>1&&grid[r-1][c].t===t&&grid[r-2][c].t===t));grid[r].push(gem(t,c,r-N-1))}}}while(!hasMove()&&Math.random()<.999);
 }
 function battle(){
+  Music.setTrack(Math.floor(Math.random()*Music.count));
   foe=FOES[fi];foeHp=foe.hp;hp=MAXHP;turns=EVERY;quiet=0;cursed=false;curseNow=false;gauge=Array(TYPES).fill(0);shown=Array(TYPES).fill(0);gq=[[],[],[],[],[],[]];gaugeWait=Array(TYPES).fill(0);power=0;pendingTurn=false;battleScore=score;
   ammo=0;phase='player';forges=[];popExtra=0;delayQ=0;ward=0;lackeyQ=false;arrow=null;em=null;slashes=[];fxp=[];rings=[];preview=null;$('lackey').classList.remove('on','shoot');$('speech').classList.remove('on');sayT=0;noGauge=false;rage=false;charge=null;proj=null;chainN=0;replay=null;boxParts=[];dust=[];parts=[];rageQueued=false;armDur=foe.arm.map(a=>a[2]);rq=null;hl=null;combo=0;drag=null;floats=[];lastMoved=null;
   $('foe').className='';buildFoe(foe);clearLog();lowSaid=false;setTimeout(()=>say('intro',true),700);$('stage').classList.remove('rage');

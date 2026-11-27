@@ -11,8 +11,11 @@ const Vol=(()=>{let bgm=.8,sfx=.8;
 let audioUnlocked=false;
 
 const Music=(()=>{
+  // Battle themes: [calm, rage] pairs of the same length, synced bar for bar. One is picked at random each battle.
+  const TRACKS=[['audio/battle_theme.ogg','audio/battle_theme_rage.ogg'],['audio/battle_theme2.ogg','audio/battle_theme2_rage.ogg']];
+  let ti=Math.floor(Math.random()*TRACKS.length);
   const mk=src=>{const a=new Audio(src);a.loop=true;a.preload='auto';a.volume=0;return a};
-  const calm=mk('audio/battle_theme.ogg'),rageEl=mk('audio/battle_theme_rage.ogg');
+  const calm=mk(TRACKS[ti][0]),rageEl=mk(TRACKS[ti][1]);
   const VOL=.42,FADE=2.5;
   let cur=calm,mixT=0,fading=null,raging=false;  // mixT: 0 = calm, 1 = rage
   const on=()=>Vol.bgm>0&&audioUnlocked&&!document.hidden;
@@ -31,7 +34,10 @@ const Music=(()=>{
       if(k>=1){clearInterval(fading);fading=null;from.pause()}},50)}
   // Follow the game's rage flag (declared in game.js, shared global scope).
   setInterval(()=>{let r=false;try{r=!!rage&&state!=='over'}catch(e){}setRage(r)},300);
-  return{play,stop,apply,setRage,get playing(){return !cur.paused},get time(){return cur.currentTime},get rage(){return raging},get mix(){return mixT}};
+  // switch theme (at battle start): both versions change together and start from the top, calm
+  function setTrack(i){if(i===ti)return;ti=i;const was=on()&&!cur.paused;clearInterval(fading);fading=null;stop();
+    calm.src=TRACKS[i][0];rageEl.src=TRACKS[i][1];raging=false;mixT=0;cur=calm;apply();if(was)play()}
+  return{play,stop,apply,setRage,setTrack,get count(){return TRACKS.length},get track(){return ti},get playing(){return !cur.paused},get time(){return cur.currentTime},get rage(){return raging},get mix(){return mixT}};
 })();
 
 const Sfx=(()=>{

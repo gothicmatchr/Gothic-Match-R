@@ -43,7 +43,9 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
 - `js/scars.js` — battle damage painted onto enemy skin/armour canvases.
 - `js/audio.js` — music (calm/rage crossfade), Web Audio effects, volume panel.
 - `js/game.js` — rules, board, effects, input, UI.
-- `audio/` — `battle_theme.ogg`, `battle_theme_rage.ogg` (same 48-bar loop, synced), `sfx/*.ogg`.
+- `audio/` — two battle themes, each a calm + rage pair (same 48-bar loop, synced): `battle_theme*.ogg`
+  (170 BPM) and `battle_theme2*.ogg` (176 BPM, "Rook's Requiem"). One theme is picked at random each
+  battle (`Music.setTrack`). `sfx/*.ogg`.
 - `tools/music/` — MIDI sources and Python generators for all audio (see below).
 - `tools/tests/` — headless Playwright stress bot and performance test (see below).
 
@@ -133,8 +135,15 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
 - `make_gothic.py` → base MIDI (melody/harmony); `make_rage.py` → rage layer MIDI.
 - `make_breakcore.py` renders the melody stems with fluidsynth (GM soundfont), synthesises a
   sliced/chopped breakcore drum stem, and writes `audio/battle_theme*.ogg` (seamless 48-bar loops).
-- `synth_sfx.py` synthesises the match-3 style effects into `audio/sfx/*.ogg`.
-- Needs: python3, numpy, scipy, mido, fluidsynth, ffmpeg, a GM `.sf2` soundfont.
+- Theme 2: `make_gothic2.py` (melody/harmony MIDI: organ, harpsichord, celesta, violin, choir; Dm | C#dim7 |
+  Dm/F | Gm | Bb | Gm6 | Asus4 | A7) + `make_rage2.py` (rage layer) → `make_breakcore2.py` renders them and
+  synthesises classic breakcore drums (Amen-style 4-bar break, Think-style break; 3-3-2 chops, machine-gun
+  snares, snare rushes to 64ths, reversed hits, half-speed drops, bitcrush, gabber 4/4 under amen chops at
+  the peak). No samples. Writes `audio/battle_theme2*.ogg`; intermediates go to `tools/music/build/`.
+- `synth_sfx.py` synthesises the match-3 style effects into `audio/sfx/*.ogg`
+  (`python3 synth_sfx.py name …` renders only those).
+- Needs: python3, numpy, scipy, mido, fluidsynth, ffmpeg, a GM `.sf2` soundfont
+  (`apt-get install fluidsynth fluid-soundfont-gm`; `pip install numpy scipy mido`).
 
 ## Pre-launch checklist (not started)
 Switch off TEST_SLINGS; title screen + settings; lock portrait; test small phone + tablet;
