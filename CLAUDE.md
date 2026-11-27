@@ -113,14 +113,26 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
   bucket bonuses fly as icons into the Ward/Pierce tags, gold counter (5 coins) and HP bar (3 plus
   gems), and those update when they land; dust landing in a full bucket sparks over the rim
   (`Sfx.spill`); a weak slingshot pull makes the band go slack and wobble (`Sfx.snap`); in Star
-  power, tapping a special gem wiggles it and clunks. No opening tutorial toast, no Star prompt.
+  power, tapping a special gem wiggles it and clunks. No opening tutorial toast, no tutorial Star prompt (only the short "Choose a gem" label).
 - Multi-strike: matching 2–4 gem types in one move replays effects as separate rounds (up to 4).
 - Match chains: each cascade link multiplies damage and bucket fill (x2, x3…) for you; the enemy's
   chains multiply his damage up to x2 (`FOE_CHAIN_MAX`). A live ×N badge (top right of the board,
   red for the enemy) grows with each link. Your links also cut the enemy's Summon/Power bar by 1/5.
 - Force chain: 5 notches under each force gem light up per perfect link in a row; the perfect
   release chime rises in pitch with each link. No text explains it.
+- Match bursts: each gem flares (white-hot core, expanding halo in its colour, spinning four-point glint,
+  `flares` in game.js); big matches (4+, L/T, 5+ gems, cascades) kick the board and play `Sfx.boom`.
+- Star power shows a pulsing "Choose a gem" label on the board's top edge (`#choose`) until a gem is picked.
 - L/T matches blast their dust outward with a shockwave before it gathers into the buckets.
+- Sister Morwen: petite figure (`petite:1`: slimmer cloak, narrower shoulders, arms squeezed via per-item
+  transforms, joints from `rig.J`), feminine plate (`femArmour` in art.js: layered pauldrons, open-face helm
+  with a widow's peak, sweetheart breastplate with filigree, laced corset-plate), and under it a sleeveless
+  gown with a plunging V neckline showing an amulet. Dagger in reverse grip (`dagger:1`), held point down
+  at her shoulder at rest. Her Summon bar fills from every gem she matches (`powerAll`); at full, her cat
+  familiar **Vesper** (`runFamiliar`, `catArt`) slides in, hisses, pounces and steals `steal` HP (14) as violet
+  wisps that heal Morwen by the same amount. The ward blocks it; it counts toward `TURN_CAP`. 14 was chosen
+  from balance runs (8 battles each): her fights match Varro's pace (~21 vs 19.5 turns, lowest HP ~39 vs 35);
+  higher values mostly lengthened fights. ~4–5 summons per battle.
 - Varro of Szarronetska: Summon bar charges from every gem he matches (and your diamond
   matches); at full it waits and the summon happens at the **end of his own turn**, max once
   per turn. His lackey Andressa (female archer, brown sleeveless jerkin) shoots a random

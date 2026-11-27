@@ -3,7 +3,7 @@
 // sword raised; strikes flow from wherever the arms currently are, then settle back.
 const Pose=(()=>{
   const RIG={w:240,h:330,ox:-20,oy:-40,tr:1};               // canvas frame for rig parts (body coords)
-  const J={rS:[150,108],rE:[157,146],lS:[50,108],lE:[43,146]}; // joints
+  const J0={rS:[150,108],rE:[157,146],lS:[50,108],lE:[43,146]}; // joints (an enemy's rig may override with rig.J)
   const pct=(x,y)=>((x-RIG.ox)/RIG.w*100)+'% '+((y-RIG.oy)/RIG.h*100)+'%';
   const REST0={rU:0,rF:0,lU:0,lF:0,lean:0,ty:0,sc:1};let REST={...REST0};
   const THREAT={rU:-118,rF:-70,lU:58,lF:118,lean:-2,ty:-2,sc:1.03};
@@ -13,6 +13,7 @@ const Pose=(()=>{
     const box=(cls,origin)=>{const d=document.createElement('div');d.className='rig '+cls;d.style.transformOrigin=origin;return d};
     const cnv=items=>{const c=raster(items,true,RIG);c.className='rigc';return c};
     // left (off-hand) arm, then right (sword) arm on top
+    const J=L.rig.J||J0;
     const lU=box('lU',pct(...J.lS)),lF=box('lF',pct(...J.lE));lU.appendChild(cnv(L.rig.lU));lF.appendChild(cnv(L.rig.lF));lU.appendChild(lF);
     const rU=box('rU',pct(...J.rS)),rF=box('rF',pct(...J.rE));rU.appendChild(cnv(L.rig.rU));rF.appendChild(cnv(L.rig.rF));rU.appendChild(rF);
     el={lU,lF,rU,rF,foe:document.getElementById('foe')};

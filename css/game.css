@@ -192,3 +192,8 @@ button.btn.buy{padding:6px 14px;min-height:40px;font-size:16px;flex:none}button.
 button.btn:disabled{opacity:.4;box-shadow:none}.purse{font-size:15px}
 .over.shopping{padding:8px 12px;gap:5px}.over.shopping h3{font-size:20px}.over.shopping .purse{font-size:14px}.over.shopping .item{padding:5px 8px;gap:8px}.over.shopping .item img{width:30px;height:30px}.over.shopping .shop{gap:5px}
 .over.shopping .item small{font-size:11px;line-height:1.2}.over.shopping .btn{min-height:40px;padding:8px 18px}
+#lackey.pounce canvas{animation:pounce .55s cubic-bezier(.3,.1,.3,1)}@keyframes pounce{35%{transform:translate(-4%,-18%) scale(1.04)}60%{transform:translate(8%,22%) scale(1.08)}100%{transform:none}}
+.box.boom{animation:boom .26s cubic-bezier(.3,1.6,.5,1)}@keyframes boom{40%{transform:scale(1.025)}}
+.choose{position:absolute;left:50%;top:-15px;transform:translateX(-50%);z-index:4;pointer-events:none;white-space:nowrap;font-size:16px;color:#ffd1ea;padding:3px 14px;border-radius:999px;
+  background:rgba(42,13,34,.92);box-shadow:inset 0 0 0 1px #ff9ad5;opacity:0;transition:opacity .2s}
+.choose.on{opacity:1;animation:choose 1.2s ease-in-out infinite}@keyframes choose{50%{opacity:.7}}

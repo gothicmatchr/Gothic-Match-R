@@ -53,7 +53,7 @@ function chips(){const p=piece(),a=foe.arm[p];
   $('segs').innerHTML=armDur.map((d,i)=>'<i class="'+(i===p?'cur':'')+'"><b style="width:'+(d/foe.arm[i][2]*100)+'%"></b></i>').join('');
   $('chips').innerHTML=a?PIECES[p]+' · weak <img src="'+icons[a[0]]+'" alt="'+GEMS[a[0]].n+'"> resists <img src="'+icons[a[1]]+'" alt="'+GEMS[a[1]].n+'">':'No armour'}
 function renderFoe(){
-  $('foeName').textContent=foe.name+(rage?' · RAGE':'');$('pwLabel').textContent=foe.lackey?'Summon':'Power';
+  $('foeName').textContent=foe.name+(rage?' · RAGE':'');$('pwLabel').textContent=foe.lackey||foe.familiar?'Summon':'Power';
   {const pct=foeHp/foe.hp*100;$('foeBar').style.height=pct+'%';$('foeGhost').style.height=pct+'%';barPulse('vbFoe',foeHp,'lf')}
   $('foeHp').textContent=Math.max(0,Math.ceil(foeHp))+' / '+foe.hp;
   power=Math.min(power,foe.cap);$('pwBar').style.width=Math.min(100,power/foe.cap*100)+'%';$('pwBar').parentNode.classList.toggle('full',power>=foe.cap);
@@ -119,7 +119,7 @@ let slashes=[];
 let swingT;
 function enemyStrikeFx(d){Pose.strike(()=>slashLand(d))}
 // the blow lands: impact sound, a red damage number by your HP bar, a heavier slam and a short hit-stop for big hits
-let hitStop=0,triumphSaid=false;
+let hitStop=0,triumphSaid=false,flares=[];const FLARE=.42;
 // the enemy taunts now and then if you sit idle on your turn
 let lastAct=performance.now(),tauntAt=IDLE_TAUNT[0]+Math.random()*IDLE_TAUNT[1];
 addEventListener('pointerdown',()=>{lastAct=performance.now()},true);
@@ -182,7 +182,7 @@ function afterTurn(){
       if(r.delay){delayQ+=r.delay;}
       if(r.left>1)replay={...r,left:r.left-1,n:r.n+1};
       phase=prev;combo=0;state='replayWait';setTimeout(()=>{if(state==='replayWait'){state='idle';afterTurn()}},700)},900);return}
-  if(phase==='enemy'&&power>=foe.cap&&!summoned){summoned=true;power-=foe.cap;renderFoe();if(foe.lackey)return runLackey();hurtMe(foe.big,'Power attack!')}
+  if(phase==='enemy'&&power>=foe.cap&&!summoned){summoned=true;power-=foe.cap;renderFoe();if(foe.lackey)return runLackey();if(foe.familiar)return runFamiliar();hurtMe(foe.big,'Power attack!')}
   if(phase==='enemy'){phase='player';curseNow=false;summoned=false}
   else{const used=pendingTurn;pendingTurn=false;if(used){turns--;quiet++}if(delayQ){turns=Math.max(turns,Math.min(MAX_TURNS,turns+delayQ));delayQ=0;const tb=$('turns');tb.classList.remove('bump');void tb.offsetWidth;tb.classList.add('bump')}
     if(turns<=0||quiet>=QUIET_MAX){turns=EVERY;quiet=0;renderFoe();return enemyMove()}}
@@ -229,7 +229,7 @@ const LACKEY={name:'Andressa',radius:2,
   none:["No baubles to break? The floor will do, then.","Nothing worth an arrow... this one, then."]};
 function sayL(t){const b=$('lspeech');b.firstChild.textContent=t;b.classList.remove('on');void b.offsetWidth;b.classList.add('on');clearTimeout(b._h);b._h=setTimeout(()=>b.classList.remove('on'),3000)}
 function runLackey(){
-  state='lackey';say('lackey',true);const L=$('lackey');if(!L.firstChild)L.appendChild(archerArt());
+  state='lackey';say('lackey',true);const L=$('lackey');if(L.dataset.who!=='archer'){L.innerHTML='';L.appendChild(archerArt());L.dataset.who='archer'}
   L.classList.remove('on','shoot');void L.offsetWidth;L.classList.add('on');
   pop('<span style="color:#c8a070">'+LACKEY.name+' the archer!</span><small>Varro summons his lackey</small>','foe');
   const specials=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=grid[r][c].t;if(t>=SP)specials.push({r,c})}
@@ -251,6 +251,22 @@ function arrowTick(dt){const A=arrow;A.t+=dt;const k=Math.min(1,A.t/A.dur);A.x=A
   else{burstFx(A.tx,A.ty,['#ffffff','#c84a2a'],16,cell*4);buzz(40);pop('<span style="color:#c8a070">'+LACKEY.name+'\'s arrow</span><small>No special gems, so she hit the bottom row</small>','foe')}
   for(const[r,c]of cells){const g=grid[r][c];g.pop=true;g.burst=true;if(g.t<TYPES)burstCell(c,r,g.t,false,true)}
   popExtra=0;state='popping';popT=0}
+/* Morwen's familiar: Vesper slides in, hisses, pounces at your HP bar and carries your life back to her as violet wisps.
+   Steals foe.steal HP (the ward blocks it; counts toward the per-turn cap) and heals Morwen by what was taken. */
+let wisps=[],famT=null;
+function runFamiliar(){state='lackey';say('lackey',true);const L=$('lackey');if(L.dataset.who!=='cat'){L.innerHTML='';L.appendChild(catArt());L.dataset.who='cat'}
+  L.classList.remove('on','shoot','pounce');void L.offsetWidth;L.classList.add('on');Sfx.hiss();
+  pop('<span style="color:#c89aff">Vesper the familiar!</span>','foe');
+  famT=setTimeout(()=>{if(state!=='lackey')return;sayL(Math.random()<.5?'Mrrrow.':'Hsssss!');flash(L,'pounce');buzz(30);
+    famT=setTimeout(()=>{if(state!=='lackey')return;
+      if(ward){ward=0;renderMe();pop('<span style="color:#8fc8ff">Blocked!</span><small>Vesper\'s claws find only your ward</small>','foe');flash($('vbMe'),'heal');Sfx.clunk();return endFamiliar(400)}
+      const d=Math.max(0,Math.min(foe.steal,TURN_CAP-turnDmg,hp));turnDmg+=d;hp-=d;renderMe();flash($('vbMe'),'hurt');Sfx.drain();buzz([40,30,80]);
+      if(d)floats.push({s:'-'+d,x:.75,y:N*.55,life:1.4,col:'#c89aff'});
+      const a=$('vbMe').getBoundingClientRect(),f=$('foe').getBoundingClientRect(),n=lowFx?8:16;
+      for(let i=0;i<n;i++)wisps.push({sx:a.left+a.width/2,sy:a.top+a.height*(.3+.5*Math.random()),tx:f.left+f.width*(.4+.2*Math.random()),ty:f.top+f.height*.45,t:-i*.04,dur:.75,w:(Math.random()-.5)*120});
+      famT=setTimeout(()=>{if(state!=='lackey')return;const h=Math.min(d,foe.hp-foeHp);foeHp+=h;renderFoe();
+        if(h)pop('<span style="color:#c89aff">Morwen drinks your life +'+h+'</span>','foe');endFamiliar(500)},800)},450)},1300)}
+function endFamiliar(ms){famT=setTimeout(()=>{$('lackey').classList.remove('on','pounce');if(state!=='lackey')return;state='idle';afterTurn()},ms)}
 function startRage(){
   state='rage';say('rage',true);pop('<span style="color:#ff4d5e">RAGE!</span><small>'+foe.name+' tears up the board</small>','foe');buzz(150);shake();
   const cells=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(grid[r][c].t<SP)cells.push([r,c]);
@@ -360,7 +376,7 @@ function fill(){
 function battle(){
   Music.setTrack(FOES[fi].theme!==undefined?FOES[fi].theme:Math.floor(Math.random()*Music.count));
   foe=FOES[fi];foeHp=foe.hp;hp=MAXHP;turns=EVERY;quiet=0;cursed=false;curseNow=false;gauge=Array(TYPES).fill(0);shown=Array(TYPES).fill(0);gq=[[],[],[],[],[],[]];gaugeWait=Array(TYPES).fill(0);power=0;pendingTurn=false;battleScore=score;
-  ammo=0;crushQ=null;crushFall=null;hammer=null;phase='player';forges=[];popExtra=0;delayQ=0;ward=0;lackeyQ=false;arrow=null;em=null;slashes=[];fxp=[];rings=[];preview=null;$('lackey').classList.remove('on','shoot');$('speech').classList.remove('on');sayT=0;noGauge=false;rage=false;charge=null;proj=null;chainN=0;replay=null;boxParts=[];dust=[];parts=[];rageQueued=false;armDur=foe.arm.map(a=>a[2]);rq=null;hl=null;combo=0;drag=null;floats=[];lastMoved=null;
+  ammo=0;$('choose').classList.remove('on');flares=[];crushQ=null;crushFall=null;hammer=null;phase='player';forges=[];popExtra=0;delayQ=0;ward=0;lackeyQ=false;arrow=null;wisps=[];clearTimeout(famT);em=null;slashes=[];fxp=[];rings=[];preview=null;$('lackey').classList.remove('on','shoot');$('speech').classList.remove('on');sayT=0;noGauge=false;rage=false;charge=null;proj=null;chainN=0;replay=null;boxParts=[];dust=[];parts=[];rageQueued=false;armDur=foe.arm.map(a=>a[2]);rq=null;hl=null;combo=0;drag=null;floats=[];lastMoved=null;
   $('foe').className='';buildFoe(foe);clearLog();lowSaid=false;setTimeout(()=>say('intro',true),700);$('stage').classList.remove('rage');
   $('over').classList.remove('on');fill();if(TEST_SLINGS)[[6,1],[6,3],[6,5]].forEach(([r,c])=>grid[r][c].t=SL);state='falling';renderFoe();renderMe();renderGauges();hud();
 }
@@ -387,6 +403,7 @@ function step(){
     replay={left:hits-1,n:2,ph:phase,gs:gs.map(g=>({t:g.t,x:g.x,y:g.y})),bonus,x:sx/hit.size+.5,y:sy/hit.size+.5,delay:0}}
   made.forEach(k=>{const r=Math.floor(k/N),c=k%N;floats.push({s:mk.get(k)===SL?'Slingshot!':'Force gem!',x:c+.5,y:r+.1,life:1.6})});
   resolve(gs,bonus,sx/hit.size+.5,sy/hit.size+.5,true,1);buzz(combo>1?30:15);
+  if(big.length||combo>1||hit.size>=5){flash(cv.parentNode,'boom');Sfx.boom(Math.min(4,combo+big.length))}
   if(ox===null){ox=sx/hit.size;oy=sy/hit.size}setPopOrder(ox,oy);
   state='popping';popT=0;
 }
@@ -439,13 +456,13 @@ function collapse(){
   state='falling';
 }
 // Star bucket power: tap a gem, then up to 5 random gems of that kind shatter at 1.25x value (free action).
-function startSelect(){state='select';Sfx.forge();pop('<span style="color:#ff9ad5">Star power!</span>');}
+function startSelect(){state='select';$('choose').classList.add('on');Sfx.forge();pop('<span style="color:#ff9ad5">Star power!</span>');}
 function starPick(t,r0,c0){const all=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const g=grid[r][c];if(g&&g.t===t&&!g.pop&&g.dying===undefined)all.push(r*N+c)}
   for(let i=all.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[all[i],all[j]]=[all[j],all[i]]}
   const pick=all.slice(0,5);if(!pick.includes(r0*N+c0)&&pick.length===5&&all.includes(r0*N+c0))pick[4]=r0*N+c0;
   clearLog();Sfx.bucket();floats.push({s:'×1.25!',x:c0+.5,y:r0-.2,life:1.4});
   pop('<span style="color:#ff9ad5">'+pick.length+' '+GEMS[t].n+(pick.length===1?'':'s')+' shattered</span><small>Worth 1.25x</small>');
-  state='idle';finishBlast(pick,0,c0+.5,r0+.5,true,true,true,1.25)}
+  state='idle';$('choose').classList.remove('on');finishBlast(pick,0,c0+.5,r0+.5,true,true,true,1.25)}
 function finishBlast(cells,bonus,x,y,keepSL,healGreens,free,mult){
   const gs=[];cells.forEach(k=>{const g=grid[Math.floor(k/N)][k%N];if(keepSL&&g.t===SL)return;g.pop=true;gs.push(g)});
   combo=1;resolve(gs,bonus,x,y,false,mult||1,healGreens);combo=0;
@@ -576,7 +593,7 @@ function slingTick(dt){
     else if(proj.vy>=0||proj.y>innerHeight)return endSling(false);
   }
 }
-function fxTick(dt){for(const v of slivers){v.vy+=500*dt;v.x+=v.vx*dt;v.y+=v.vy*dt;v.r+=v.vr*dt;v.life-=dt}slivers=slivers.filter(v=>v.life>0);for(const k of slacks)k.t+=dt;slacks=slacks.filter(k=>k.t<.45);for(const sl of slashes)sl.t+=dt;slashes=slashes.filter(sl=>sl.t<.6);for(const p of fxp){p.vy+=cell*14*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt}fxp=fxp.filter(p=>p.life>0);for(const r of rings)r.t+=dt;rings=rings.filter(r=>r.t<.5)}
+function fxTick(dt){for(const w of wisps)w.t+=dt;wisps=wisps.filter(w=>w.t<w.dur);for(const v of slivers){v.vy+=500*dt;v.x+=v.vx*dt;v.y+=v.vy*dt;v.r+=v.vr*dt;v.life-=dt}slivers=slivers.filter(v=>v.life>0);for(const k of slacks)k.t+=dt;slacks=slacks.filter(k=>k.t<.45);for(const sl of slashes)sl.t+=dt;slashes=slashes.filter(sl=>sl.t<.6);for(const p of fxp){p.vy+=cell*14*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt}fxp=fxp.filter(p=>p.life>0);for(const r of rings)r.t+=dt;rings=rings.filter(r=>r.t<.5)}
 /* enemy blows tear the screen: 2-3 parallel jagged rips (dark inside, crimson torn edges, tapered ends)
    that open along the cut, shedding slivers as they go */
 let slivers=[];
@@ -592,7 +609,7 @@ function drawShred(sl){if(sl.t<0)return;shredShape(sl);const ux=Math.cos(sl.a),u
     if(!tr.shed&&k>=1){tr.shed=1;if(!lowFx)for(let i=0;i<5&&slivers.length<60;i++){const u=.15+.7*Math.random(),side=Math.random()<.5?1:-1,v=60+Math.random()*120;
       slivers.push({x:sx+ux*L*u,y:sy+uy*L*u,vx:nx*side*v+ux*(Math.random()-.5)*60,vy:ny*side*v-40,r:sl.a,vr:(Math.random()-.5)*14,l:4+Math.random()*7,h:1+Math.random()*1.5,c:Math.random()<.5?'#c8283e':'#3a0c14',life:.6+Math.random()*.3})}}}}
 function drawFx(){
-  const any=hammer||slivers.length||slacks.length||(drag&&drag.sling)||proj||slashes.length||dust.length||arrow||rings.length||fxp.length;
+  const any=wisps.length||hammer||slivers.length||slacks.length||(drag&&drag.sling)||proj||slashes.length||dust.length||arrow||rings.length||fxp.length;
   if(!any&&!fxDrawn)return;fxDrawn=!!any;
   fctx.clearRect(0,0,innerWidth,innerHeight);if(!any)return;fctx.imageSmoothingEnabled=false;
   const br=cv.getBoundingClientRect(),im=sprites[SL];if(!im)return;
@@ -608,6 +625,8 @@ function drawFx(){
     fctx.save();fctx.translate(proj.x,proj.y);fctx.rotate(proj.spin);if(lowFx)fctx.drawImage(im,-z/2,-z/2,z,z);else{const gs=glowSprite(SL,'#7ff5e1',12),gz=z*(1+2*gs.pad/cell);fctx.drawImage(gs,-gz/2,-gz/2,gz,gz)}fctx.restore();
     if(proj.hit){fctx.save();fctx.globalAlpha=Math.min(1,proj.hold*4);fctx.fillStyle='#fff';fctx.beginPath();fctx.arc(proj.x,proj.y,cell*.9,0,Math.PI*2);fctx.fill();fctx.restore()}}
   drawHammer();
+  for(const w of wisps){if(w.t<0)continue;const k=w.t/w.dur,e=k*k*(3-2*k),x=w.sx+(w.tx-w.sx)*e+Math.sin(k*Math.PI)*w.w*.3,y=w.sy+(w.ty-w.sy)*e-Math.sin(k*Math.PI)*60;
+    fctx.globalAlpha=Math.min(1,(1-k)*3)*.9;const z=cell*.5;fctx.drawImage(halo('#c89aff'),x-z/2,y-z/2,z,z);fctx.fillStyle='#f4e8ff';fctx.fillRect(Math.round(x-1.5),Math.round(y-1.5),3,3);fctx.globalAlpha=1}
   for(const sl of slashes)drawShred(sl);
   for(const v of slivers){fctx.save();fctx.globalAlpha=Math.min(1,v.life*3);fctx.translate(v.x,v.y);fctx.rotate(v.r);fctx.fillStyle=v.c;fctx.beginPath();fctx.moveTo(-v.l/2,0);fctx.lineTo(v.l/2,-v.h);fctx.lineTo(v.l/3,v.h);fctx.closePath();fctx.fill();fctx.restore()}
   for(const p of dust){if(p.delay>0)continue;fctx.globalAlpha=Math.min(1,p.life*2);fctx.fillStyle=p.col;fctx.fillRect(Math.round(p.x-p.s/2),Math.round(p.y-p.s/2),Math.round(p.s),Math.round(p.s))}fctx.globalAlpha=1;
@@ -655,7 +674,8 @@ function frame(now){
   chargeTick(dt);Pose.tick(dt,(locked||state==='rage'||state==='enemy'||state==='enemyAnim')&&state!=='over');
   const lk=state==='enemy'||state==='enemyAnim'||state==='lackey'||(phase==='enemy'&&state!=='over');if(lk!==locked){locked=lk;cv.parentNode.classList.toggle('locked',lk)}
   if(state==='popping')for(const row of grid)for(const g of row)if(g&&g.pop&&!g._lit&&g.dying===undefined&&popT>=(g.bAt||0)){g._lit=1;Sfx.match(sfxN++)}
-  if(state==='popping')for(const row of grid)for(const g of row)if(g&&g.pop&&!g.burst&&g.dying===undefined&&popT>=burstT(g)){g.burst=true;buzz(6);Sfx.pop(g.t);if(g.blast&&!g.blast.fx){g.blast.fx=1;const br=cv.getBoundingClientRect();rings.push({x:br.left+g.blast.x*cell,y:br.top+g.blast.y*cell,t:0});shake();buzz([30,20,60])}burstCell(g.x,g.y,g.t<TYPES?g.t:0,false,false,g.blast)}
+  if(state==='popping')for(const row of grid)for(const g of row)if(g&&g.pop&&!g.burst&&g.dying===undefined&&popT>=burstT(g)){g.burst=true;buzz(6);Sfx.pop(g.t);flares.push({x:g.x+.5,y:g.y+.5,t:0,c:g.t<TYPES?COLORS[g.t][0]:'#fff6d5',big:!!g.blast||combo>1});if(g.blast&&!g.blast.fx){g.blast.fx=1;const br=cv.getBoundingClientRect();rings.push({x:br.left+g.blast.x*cell,y:br.top+g.blast.y*cell,t:0});shake();buzz([30,20,60])}burstCell(g.x,g.y,g.t<TYPES?g.t:0,false,false,g.blast)}
+  for(const f of flares)f.t+=dt;flares=flares.filter(f=>f.t<FLARE);
   boxTick(dt);dustTick(dt);for(const f of forges)f.t+=dt;forges=forges.filter(f=>f.t<.95);
   if(state==='crushDrop')crushDropTick(dt);else if(state==='rage')rageTick(dt);
   else if(state==='enemyAnim')enemyTick(dt);
@@ -664,7 +684,7 @@ function frame(now){
   else if(state==='hammer'&&hammer)hammerTick(dt);
   else if(state==='popping'){popT+=dt;if(popT>=popEnd())collapse()}else if(state==='falling'&&settled)step();
   fxTick(dt);
-  const busy=boardDirty||!settled||(slingOnBoard()&&slingTugging())||state!=='idle'||drag||charge||hl||floats.length||parts.length||boxParts.length||forges.length||now-lastFull>500;
+  const busy=boardDirty||!settled||flares.length||(slingOnBoard()&&slingTugging())||state!=='idle'||drag||charge||hl||floats.length||parts.length||boxParts.length||forges.length||now-lastFull>500;
   if(busy){boardDirty=false;if(now-lastFull>500)lastFull=now;draw()}
   drawFx();drawBackdrop(dt);floats=floats.filter(f=>(f.life-=dt)>0);
   perfWatch(dt,busy&&(state!=='idle'||dust.length>0||fxp.length>0));requestAnimationFrame(frame);
@@ -722,7 +742,7 @@ function draw(){
     if(g.pop&&state==='popping'&&!g.burst&&lt(g)>=0){const l=lt(g),fl=Math.max(0,1-l/.12),a=.55+.45*fl,cx=(g.x+.5)*cell,cy=(g.y+.5)*cell;ctx.save();
       // soft round halo in the gem's colour, fading to nothing (no hard edges)
       const gc=g.t<TYPES?COLORS[g.t][0]:'#fff6d5';
-      ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.85*a;ctx.drawImage(halo(gc),cx-cell*.6,cy-cell*.6,cell*1.2,cell*1.2);
+      ctx.globalCompositeOperation='lighter';ctx.globalAlpha=Math.min(1,a);const hz=cell*(1.25+.35*fl);ctx.drawImage(halo(gc),cx-hz/2,cy-hz/2,hz,hz);
       // a light rim that follows the gem's own outline
       const im=sprites[g.t];if(im&&!lowFx){const z=cell*(1.1+.06*fl);ctx.globalCompositeOperation='lighter';ctx.globalAlpha=.4+.45*fl;ctx.drawImage(im,cx-z/2,cy-z/2,z,z)}
       ctx.restore()}
@@ -750,6 +770,14 @@ function draw(){
       ctx.translate(cx,cy);ctx.rotate(k*1.2);ctx.fillStyle=col[0];for(let i=0;i<8;i++){ctx.rotate(Math.PI/4);ctx.fillRect(cell*(.35+k*.5),-1.5,cell*.35*(1-k),3)}}
     ctx.restore()}
   if(crushFall){const z=cell*1.1,x=(crushFall.c+.5)*cell-z/2,y=(crushFall.y+.5)*cell-z/2;ctx.globalAlpha=.25;ctx.drawImage(sprites[CR],x,y-cell*.5,z,z);ctx.globalAlpha=1;ctx.drawImage(sprites[CR],x,y,z,z)}
+  // match bursts: white-hot core, expanding coloured halo and a spinning four-point glint
+  if(flares.length){ctx.save();ctx.globalCompositeOperation='lighter';
+    for(const f of flares){const k=f.t/FLARE,cx=f.x*cell,cy=f.y*cell,S=f.big?1.35:1;
+      ctx.globalAlpha=Math.max(0,1-k)*.9;let z=cell*(.9+1.6*k)*S;ctx.drawImage(halo(f.c),cx-z/2,cy-z/2,z,z);
+      if(k<.45){ctx.globalAlpha=1-k/.45;z=cell*(.7+.6*k)*S;ctx.drawImage(halo('#ffffff'),cx-z/2,cy-z/2,z,z)}
+      if(!lowFx&&k<.7){const a=1-k/.7,L=cell*(.95-.5*k)*S,w=Math.max(1.5,cell*.06*a);ctx.globalAlpha=a;ctx.fillStyle='#ffffff';ctx.translate(cx,cy);ctx.rotate(k*1.6+.3);
+        ctx.fillRect(-L,-w/2,L*2,w);ctx.fillRect(-w/2,-L,w,L*2);ctx.setTransform(dpr,0,0,dpr,0,0)}}
+    ctx.restore()}
   if(top){const s=1.15;ctx.drawImage(sprites[top.t],top.x*cell-cell*(s-1)/2,top.y*cell-cell*(s-1)/2,cell*s,cell*s)}
   for(const p of parts){ctx.globalAlpha=Math.min(1,p.life*2);ctx.fillStyle=p.col;const z=p.s*cell;ctx.fillRect(Math.round(p.x*cell-z/2),Math.round(p.y*cell-z/2),Math.round(z),Math.round(z))}ctx.globalAlpha=1;
   ctx.textAlign='center';ctx.font='400 '+Math.round(cell*.36)+'px Marcellus,system-ui,sans-serif';
@@ -786,7 +814,7 @@ icons=[0,1,2,3,4,5].map(t=>gemCanvas(t,64).toDataURL());
 $('pwIcon').src=icons[RED];
 $('gauges').innerHTML=ATK.map(t=>`<button class="g" aria-label="${GEMS[t].n} gauge"><img src="${icons[t]}" alt=""><div class="bar"><i></i></div></button>`).join('');
 $('gauges').querySelectorAll('.g').forEach((b,j)=>b.addEventListener('click',()=>{const t=ATK[j],G=GEMS[t];
-    if(t===STAR&&state==='select'){gauge[t]=shown[t]=G.cap;state='idle';renderGauges();return}
+    if(t===STAR&&state==='select'){gauge[t]=shown[t]=G.cap;state='idle';$('choose').classList.remove('on');renderGauges();return}
     if(!(ready(t)&&state==='idle'&&!locked)){nudge(b);Sfx.clunk(locked);buzz(15);return}  // not yet: the bucket shakes and clunks
     gauge[t]=shown[t]=0;gq[t]=[];if(t===STAR)startSelect();else{Sfx.bucket();flash(b,'fire')}  // buckets no longer damage the enemy
     // bucket bonuses fly to where they land instead of being described

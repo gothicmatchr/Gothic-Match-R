@@ -170,3 +170,18 @@ finish('crush', mix((boom, 0, 1), (bend, 0, .7), (lp(iron, 2600), .004, .55), (b
 thunk = sweep(90, 40, .22) * env(T(.22), .002, .22)
 clank = mix((bell(hz('A3'), .4, 2.2, 2.76), 0, .6), (bell(hz('D4'), .3, 1.8, 2.76), .01, .35))
 finish('anvil', mix((thunk, 0, 1), (lp(clank, 3000), 0, .5), (lp(noise(.03), 2000) * env(T(.03), .0005, .03), 0, .4)), tail=.5)
+
+# HISS: Vesper the familiar arrives. A cat's hiss: band-passed breathy noise with a sharp onset, a low growl under it.
+hs = bp_sweep(noise(.5), 4200, 2600) * env(T(.5), .01, .5)
+growl = lp(np.sign(np.sin(2 * np.pi * 95 * T(.45))) * (1 + .5 * np.sin(2 * np.pi * 24 * T(.45))), 700) * env(T(.45), .03, .45) * .3
+finish('hiss', mix((hs, 0, 1), (growl, .02, .6)), tail=.3)
+
+# DRAIN: your life is carried off to Morwen. An eerie falling glissando of soft bells down D harmonic minor over an airy swell.
+gl = mix(*[(bell(hz(nm), .5, .9, 2.0), i * .07, .45) for i, nm in enumerate(['D6', 'C#6', 'Bb5', 'A5', 'G5', 'F5', 'E5', 'D5'])])
+air = lp(bp_sweep(noise(.9), 2500, 600), 3000) * np.sin(np.pi * T(.9) / .9) * .25
+finish('drain', mix((gl, 0, 1), (air, 0, 1)), tail=.9)
+
+# BOOM: big matches and cascades. A deep sub thump with a bright D-minor shimmer on top, for bombast.
+sub = sweep(90, 38, .45) * env(T(.45), .002, .45)
+shim = mix(*[(bell(hz(nm), .5, 1.4, 2.0), 0, g) for nm, g in (('D6', .4), ('A6', .3), ('F6', .25))])
+finish('boom', mix((sub, 0, 1), (lp(noise(.05), 3000) * env(T(.05), .0005, .05), 0, .4), (shim, .01, .5), (sparkle(.3, 6), .03, .35)), tail=.7)

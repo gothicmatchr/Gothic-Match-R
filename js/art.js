@@ -88,6 +88,26 @@ function orbCanvas(t,px){
   return o;
 }
 /* ---------- enemy art ---------- */
+// fitted, feminine plate for petite enemies: small layered pauldrons, a sleek open-face helm with a widow's peak,
+// a laced corset-plate at the waist and a contoured breastplate trimmed with filigree
+function femArmour(A,K,Ad,Al,Tr,e){const TrD=mix(Tr,'#000000',.2);
+  const pl=(sx)=>{const X=x=>sx<0?200-x:x;const P=s=>s.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g,(m,a,b)=>X(+a)+' '+b);
+    return[{d:P('M54 112Q55 98 72 98L74 110Q63 112 54 112Z'),f:A},{d:P('M54 112Q64 114 74 110L74 117Q64 121 56 119Z'),f:A},
+      {d:P('M54 112Q64 114 74 110'),s:Tr,w:1.4},{d:P('M56 119Q64 121 74 117'),s:Tr,w:1.1},{d:P('M58 103Q64 100 70 100'),s:Al,w:1.6},
+      {d:P('M59 107Q62 105 65 107Q68 105 71 107'),s:TrD,w:.7},{d:C(X(70),104,1.1),f:K}]};
+  return[
+   [...pl(1),...pl(-1),{d:'M146 112Q145 98 128 98L126 110Q137 112 146 112Z',f:Ad}],
+   [{d:'M82 50Q81 23 100 21Q119 23 118 50L114 50Q113 34 100 32Q87 34 86 50Z',f:A},{d:'M104 22Q119 25 118 50L114 50Q114 36 104 33Z',f:Ad},
+    {d:'M95 32L100 41L105 32Z',f:A},{d:'M95 32L100 41L105 32',s:Tr,w:1},{d:'M86 50Q87 34 100 32Q113 34 114 50',s:Tr,w:1.6},{d:'M87 42Q88 30 97 25',s:Al,w:2},
+    {d:'M100 21Q96 15 91 17M100 21Q104 15 109 17',s:Tr,w:1.2},{d:C(100,27,1.6),f:e.gem},
+    {d:'M82 50L86 50L87 62L83 60Z',f:A},{d:'M118 50L114 50L113 62L117 60Z',f:A},{d:'M118 50L114 50L113 62L117 60Z',f:Ad}],
+   [{d:'M73 136Q100 141 127 136L125 150Q100 155 75 150Z',f:A},{d:'M75 150Q100 155 125 150L124 160Q100 165 76 160Z',f:A},
+    {d:'M112 139Q124 138 127 136L124 160Q118 162 112 163Z',f:Ad},{d:'M75 150Q100 155 125 150',s:K,w:1.4},{d:'M77 139Q90 142 98 141',s:Al,w:1.3},
+    {d:'M97 138L103 141M103 138L97 141M97 143L103 146M103 143L97 146',s:Tr,w:.8},{d:'M76 160Q100 165 124 160',s:Tr,w:1.2},{d:'M73 136Q100 141 127 136',s:Tr,w:1.2}],
+   [{d:'M70 104Q85 97 100 105Q115 97 130 104L127 137Q100 142 73 137Z',f:A},{d:'M100 105Q115 97 130 104L127 137Q114 140 100 141Z',f:Ad},
+    {d:'M70 104Q85 97 100 105Q115 97 130 104',s:Tr,w:2.2},{d:'M76 107Q85 102 94 104',s:Al,w:1.8},{d:'M78 118Q86 122 94 120',s:Al,w:1},
+    {d:'M86 110Q90 117 87 125Q85 129 88 133M114 110Q110 117 113 125Q115 129 112 133',s:Tr,w:.8},{d:'M100 112V134',s:Tr,w:.7},
+    {d:'M73 137Q100 142 127 137',s:Tr,w:1.6},{d:C(100,110,2.2),f:Tr},{d:C(100,110,1.4),f:e.gem}]]}
 const C=(x,y,r)=>`M${x-r} ${y}a${r} ${r} 0 1 0 ${2*r} 0a${r} ${r} 0 1 0 ${-2*r} 0Z`;
 const E=(x,y,rx,ry)=>`M${x-rx} ${y}a${rx} ${ry} 0 1 0 ${2*rx} 0a${rx} ${ry} 0 1 0 ${-2*rx} 0Z`;
 const Rc=(x,y,w,h)=>`M${x} ${y}h${w}v${h}h${-w}Z`;
@@ -98,20 +118,30 @@ function layers(e){
   const cp=e.cape,cpD=mix(cp,'#000000',.45),cpL=mix(cp,'#8a7aa0',.25),ln=e.lining,lnL=mix(ln,'#ffffff',.2),lnD=mix(ln,'#000000',.35);
   const base=[];
   // cape behind the body, with high collar
-  base.push({d:'M38 100Q18 140 12 170L188 170Q182 140 162 100Q130 92 100 96Q70 92 38 100Z',f:cp},
+  const capeAt=base.length;base.push({d:'M38 100Q18 140 12 170L188 170Q182 140 162 100Q130 92 100 96Q70 92 38 100Z',f:cp},
     {d:'M24 140Q16 156 12 170L36 170Q30 158 32 140Z',f:ln},{d:'M176 140Q184 156 188 170L164 170Q170 158 168 140Z',f:lnD},
     {d:'M30 120Q24 146 22 170M44 112Q38 142 40 170M156 112Q162 142 160 170M170 120Q176 146 178 170',s:cpD,w:2},{d:'M34 112Q28 136 26 160',s:cpL,w:1.2},
     {d:'M80 100Q60 78 62 40Q74 62 90 80Q91 90 92 100Z',f:cp},{d:'M120 100Q140 78 138 40Q126 62 110 80Q109 90 108 100Z',f:cpD},
     {d:'M82 98Q67 78 67 50Q77 68 90 82Z',f:ln},{d:'M118 98Q133 78 133 50Q123 68 110 82Z',f:lnD},
     {d:'M62 40Q60 70 80 100',s:Tr,w:1.4},{d:'M138 40Q140 70 120 100',s:mix(Tr,'#000000',.3),w:1.4});
+  const PET=!!e.petite;if(PET)for(let i=capeAt;i<base.length;i++)base[i].m=[.8,0,0,1,20,0];  // slimmer cloak for a petite frame
   if(e.fur)base.push({d:'M56 104Q70 90 100 92Q130 90 144 104Q130 98 100 100Q70 98 56 104Z',f:e.fur},{d:'M60 101L63 97M68 98L70 93M78 96L79 91M122 96L121 91M132 98L130 93M140 101L137 97',s:mix(e.fur,'#ffffff',.3),w:1.2});
   if(e.style==='long')base.push({d:'M80 44Q68 84 64 124Q76 132 88 120Q84 90 86 56Z',f:H},{d:'M120 44Q132 84 136 124Q124 132 112 120Q116 90 114 56Z',f:HD},
     {d:'M76 66Q72 96 70 120M82 62Q78 92 78 116',s:HM,w:1.2},{d:'M124 66Q128 96 130 120M118 62Q122 92 122 116',s:H,w:1.2},{d:'M78 58Q74 84 72 104',s:HL,w:1});
   const rarm=[{d:'M140 100Q158 104 163 126L167 170L143 170L139 128Z',f:sk},{d:'M156 110Q163 120 163 130L167 170L158 170Q160 140 156 110Z',f:skS},{d:'M141 128Q143 150 145 170L149 170Q147 148 147 130Z',f:skS},
     {d:'M152 118Q156 132 158 150',s:skD,w:1}];
-  base.push({d:E(50,112,12,11),f:sk},{d:E(46,110,6,6),f:skL},{d:E(150,112,12,11),f:sk},{d:E(155,114,6,7),f:skS},
+  if(PET)base.push({d:E(63,110,8,8),f:sk},{d:E(61,108,4,4),f:skL},{d:E(137,110,8,8),f:sk},{d:E(140,112,4,5),f:skS},
+    {d:'M68 101Q100 95 132 101L126 148Q123 156 125 170L75 170Q77 156 74 148Z',f:sk});
+  else base.push({d:E(50,112,12,11),f:sk},{d:E(46,110,6,6),f:skL},{d:E(150,112,12,11),f:sk},{d:E(155,114,6,7),f:skS},
     {d:'M60 100Q100 92 140 100L135 170L65 170Z',f:sk});
-  if(e.top)base.push({d:'M64 102Q100 95 136 102L134 170L66 170Z',f:e.top},{d:'M112 101Q134 101 136 104L134 170L114 170Z',f:'rgba(0,0,0,.25)'},
+  if(PET){const T=e.top,TD=mix(T,'#000000',.4),TL=mix(T,'#ffffff',.18);  // sleeveless gown, plunging neckline, waist belt
+    base.push({d:'M70 103Q100 98 130 103L125 148Q122 156 124 170L76 170Q78 156 75 148Z',f:T},{d:'M112 101Q128 101 130 103L125 148Q122 156 124 170L112 170Z',f:'rgba(0,0,0,.25)'},
+      {d:'M85 101Q93 104 100 133Q107 104 115 101Z',f:sk},{d:'M107 104Q103 112 100 133Q104 112 113 102Z',f:skS},
+      {d:'M85 101Q94 105 100 133M115 101Q106 105 100 133',s:TD,w:1.3},{d:'M86 102Q94 106 99.6 130',s:Tr,w:.6},
+      {d:'M92 108Q96 116 98.6 125',s:skS,w:.8},{d:'M74 112Q78 104 84 103',s:TL,w:1.2},
+      {d:'M75 146Q100 151 125 146L125 151Q100 156 75 151Z',f:Tr},{d:C(100,152,2),f:e.gem},
+      {d:'M86 157L83 170M100 157V170M114 157L117 170',s:TD,w:1},{d:'M92 158L91 170',s:TL,w:.8})}
+  else if(e.top)base.push({d:'M64 102Q100 95 136 102L134 170L66 170Z',f:e.top},{d:'M112 101Q134 101 136 104L134 170L114 170Z',f:'rgba(0,0,0,.25)'},
     {d:'M86 101Q100 112 114 101L114 104Q100 116 86 104Z',f:mix(e.top,'#000000',.4)},{d:'M100 110V168',s:mix(e.top,'#000000',.3),w:1.2},
     {d:'M70 120Q76 140 72 168M128 120Q124 140 128 168',s:mix(e.top,'#000000',.3),w:1.2},{d:'M74 110Q86 105 96 106',s:'rgba(255,255,255,.14)',w:1.6},
     {d:'M88 104L90 108M94 106L95 110M105 106L104 110M111 104L109 108',s:Tr,w:.9});
@@ -119,9 +149,13 @@ function layers(e){
     {d:'M100 121V152',s:skS,w:1.6},{d:'M89 134H98M102 134H111M90 144H98M102 144H110',s:skS,w:1.4},{d:C(100,154,1.4),f:skD},
     {d:'M76 103Q87 106 96 104M104 104Q113 106 124 103',s:skS,w:1.6},{d:'M128 103Q141 102 139 110L135 170L124 170Q130 140 128 103Z',f:'rgba(30,10,40,.22)'},
     {d:'M73 107Q84 103 94 107',s:skL,w:2},{d:'M80 120Q86 124 92 122',s:skL,w:1.2},{d:'M118 126Q122 140 120 156',s:skD,w:1});
-  base.push({d:Rc(65,158,70,12),f:e.cloth},{d:Rc(65,158,70,3),f:'rgba(0,0,0,.3)'},{d:Rc(95,157,10,9),f:Tr},{d:Rc(97,159,6,4),f:e.cloth},{d:Rc(96,157.5,8,1),f:'rgba(255,255,255,.4)'});
+  if(!PET)base.push({d:Rc(65,158,70,12),f:e.cloth},{d:Rc(65,158,70,3),f:'rgba(0,0,0,.3)'},{d:Rc(95,157,10,9),f:Tr},{d:Rc(97,159,6,4),f:e.cloth},{d:Rc(96,157.5,8,1),f:'rgba(255,255,255,.4)'});
   // neck, chain clasp and brooch
-  base.push({d:'M92 72L92 99L108 99L108 72Z',f:sk},{d:'M92 90Q80 97 62 100L138 100Q120 97 108 90Z',f:sk},{d:'M103 74L108 74L108 98L103 98Z',f:skS},
+  if(PET)base.push({d:'M93 72L93 99L107 99L107 72Z',f:sk},{d:'M93 90Q84 97 70 101L130 101Q116 97 107 90Z',f:sk},{d:'M103 74L107 74L107 98L103 98Z',f:skS},
+    {d:'M95 94Q100 97 105 94',s:skS,w:1},{d:C(72,101,1.6),f:Tr},{d:C(128,101,1.6),f:Tr},
+    // the amulet on a fine chain, resting at the neckline
+    {d:'M93 93Q95 108 100 117Q105 108 107 93',s:Tr,w:.9},{d:E(100,121.5,3.4,4.4),f:Tr},{d:E(100,121.5,2.3,3.2),f:e.gem},{d:C(99.2,120.4,.8),f:mix(e.gem,'#ffffff',.7)},{d:'M98.6 126L100 129L101.4 126Z',f:Tr});
+  else base.push({d:'M92 72L92 99L108 99L108 72Z',f:sk},{d:'M92 90Q80 97 62 100L138 100Q120 97 108 90Z',f:sk},{d:'M103 74L108 74L108 98L103 98Z',f:skS},
     {d:'M95 82L98 98M105 82L102 98',s:skS,w:1},{d:'M94 100Q100 103 106 100',s:skS,w:1.2},
     {d:'M84 100Q92 107 100 106Q108 107 116 100',s:Tr,w:1.3},{d:'M85 101Q92 108 100 107',s:'rgba(255,255,255,.3)',w:.6},
     {d:C(100,106,4.2),f:Tr},{d:C(100,106,2.8),f:e.gem},{d:C(99,105,1),f:mix(e.gem,'#ffffff',.7)},{d:C(84,100,2),f:Tr},{d:C(116,100,2),f:Tr});
@@ -172,12 +206,16 @@ function layers(e){
     {d:`M${x-7} 184.5H${x+7}M${x-7} 188H${x+7}`,s:skS,w:1.1},{d:`M${x-4} 191.5H${x+5}`,s:skD,w:1}];
   // serrated short sword: small teeth along the back edge (Varro)
   const serr=()=>{let d='M154 197L161 197L161 200';for(let y=200;y<228;y+=4.5)d+=`L162.8 ${y+1.5}L161 ${y+3}`;return d+'L160.4 232L157.5 240L154.6 232Z'};
+  // reverse-grip dagger: the blade runs back along the forearm, so it points down when she raises it to strike
+  const dagger=[{d:Rc(168.6,176,4.6,15),f:'#3a2418'},{d:'M169.2 179H172.6M169.2 183H172.6M169.2 187H172.6',s:'#6a4a2a',w:.8},{d:C(170.9,193,2.4),f:Tr},
+    {d:Rc(164.4,173,13,2.8),f:Tr},{d:'M167.8 173.2L174 173.2L173.2 141L170.9 132L168.6 141Z',f:steel},
+    {d:'M170.9 171V140',s:'#7d8792',w:.9},{d:'M168.4 172L169.2 141',s:'#ffffff',w:.8},{d:C(170.9,174.4,1),f:e.gem}];
   const rig={
     rU:[{d:'M139 101Q158 100 164 122L164 147Q157 153 149 150L145 146L140 126Z',f:sk},{d:'M157 110Q164 120 164 132L164 147L158 149Q161 128 157 110Z',f:skS},
       {d:'M146 112Q150 120 150 132',s:skL,w:1.2},{d:'M143 128Q145 138 147 147',s:skS,w:1.2},{d:'M150 147Q156 150 162 147',s:skD,w:1}],
     rF:[{d:'M148 144Q157 139 166 145L165 160L150 160Z',f:sk},{d:'M160 144Q166 147 165 160L160 160Z',f:skS},...bracer(148.5),...fist(157.5),
-      {d:'M146 193Q157.5 190 169 193L169 197Q157.5 194 146 197Z',f:Tr},{d:'M146 193Q157.5 190 169 193',s:'rgba(255,255,255,.45)',w:.9},{d:C(157.5,195,1.6),f:e.gem},
-      {d:e.serrated?serr():'M154 197L161 197L160.4 232L157.5 240L154.6 232Z',f:steel},{d:'M157.5 199V231',s:'#7d8792',w:1.4},{d:'M154.7 198L155.3 231',s:'#ffffff',w:.9},{d:'M160.4 198L160 231',s:'#5a6470',w:.8}],
+      ...(e.dagger?dagger:[{d:'M146 193Q157.5 190 169 193L169 197Q157.5 194 146 197Z',f:Tr},{d:'M146 193Q157.5 190 169 193',s:'rgba(255,255,255,.45)',w:.9},{d:C(157.5,195,1.6),f:e.gem},
+      {d:e.serrated?serr():'M154 197L161 197L160.4 232L157.5 240L154.6 232Z',f:steel},{d:'M157.5 199V231',s:'#7d8792',w:1.4},{d:'M154.7 198L155.3 231',s:'#ffffff',w:.9},{d:'M160.4 198L160 231',s:'#5a6470',w:.8}])],
     lU:[{d:'M61 101Q42 100 36 122L36 147Q43 153 51 150L55 146L60 126Z',f:sk},{d:'M43 110Q36 120 36 132L36 147L41 148Q39 128 43 110Z',f:skL},
       {d:'M57 128Q55 138 53 147',s:skS,w:1.2},{d:'M50 147Q44 150 38 147',s:skD,w:1}],
     lF:[{d:'M52 144Q43 139 34 145L35 160L50 160Z',f:sk},{d:'M40 144Q34 147 35 160L40 160Z',f:skL},...bracer(34.5),...fist(42.5)]};
@@ -186,6 +224,10 @@ function layers(e){
     {d:'M93 63Q91 69 93.6 75.4M107 63Q109 69 106.4 75.4',s:skD,w:1.2},
     {d:E(100,75.6,5.6,2.4),f:'#2a0a0e'},{d:Rc(95.2,74.6,9.6,1.9),f:'#e6dccb'},{d:'M97.6 74.6V76.5M100 74.6V76.5M102.4 74.6V76.5',s:'#9a8e80',w:.6},
     {d:'M94 74.4Q100 72.6 106 74.4',s:lipD,w:1.2},{d:'M94.6 77.4Q100 78.8 105.4 77.4',s:lip,w:1}];
+  if(PET){  // slimmer arms on narrower shoulders: squeeze each arm about its own line, and move the joints to match
+    for(const k of['rU','rF'])rig[k]=rig[k].map(it=>({...it,m:[.8,0,0,1,18,0]}));
+    for(const k of['lU','lF'])rig[k]=rig[k].map(it=>({...it,m:[.8,0,0,1,22,0]}));
+    rig.J={rS:[138,108],rE:[143.6,146],lS:[62,108],lE:[56.4,146]}}
   return{base,rarm,weapon,rig,fa,
     fn:e.expr==='weary'?[...tiredEye(92),...tiredEye(108),{d:'M86.6 48.4Q92 47.6 97.2 50.8',s:brow,w:2.1},{d:'M102.8 50.8Q108 47.6 113.4 48.4',s:brow,w:2.1},{d:'M98.6 47.6L99.3 51.2M101.4 47.6L100.7 51.2',s:skS,w:.9},...nose,
       {d:'M94.6 75.6Q97 73.2 100 73.4Q103 73.2 105.4 75.6Q100 74.6 94.6 75.6Z',f:lipD},{d:'M95.8 76Q100 77.4 104.2 76Q100 75.6 95.8 76Z',f:lip},{d:'M94 75.4L93.3 76.6M106 75.4L106.7 76.6',s:skS,w:.9}]:
@@ -194,7 +236,7 @@ function layers(e){
     ff:[...eye(92,true),...eye(108,true),{d:'M87 47Q91 44 96.5 45.5',s:brow,w:e.fem?1.3:1.9},{d:'M103.5 45.5Q109 44 113 47',s:brow,w:e.fem?1.3:1.9},...nose,
       {d:E(100,74.5,4,3.2),f:'#3a0d12'},{d:Rc(97.2,71.6,5.6,1.3),f:'#efe8e0'},{d:'M95.5 74Q100 79 104.5 74',s:lip,w:1.2},
       {d:'M120 38q4 7 0 10q-4 -3 0 -10Z',f:'#9fd8ff'},{d:'M120.6 40.5q.6 2 0 3.5',s:'#ffffff',w:.7}],
-    arm:[
+    arm:PET?femArmour(A,K,Ad,Al,Tr,e):[
      [{d:'M30 118Q32 94 62 96L64 122Q46 126 30 118Z',f:A},{d:'M30 118Q46 128 64 124L63 132Q46 136 32 128Z',f:A},{d:'M34 108Q48 102 62 106',s:K,w:2},{d:'M36 103Q46 98 58 99',s:Al,w:2.5},
       {d:'M30 118Q46 126 64 122',s:Tr,w:2},{d:'M32 128Q46 134 63 131',s:Tr,w:1.5},{d:C(40,112,1.8),f:K},{d:C(54,108,1.8),f:K},{d:'M38 106Q44 102 50 103M40 110L46 106',s:mix(Tr,'#000000',.2),w:.8},
       {d:'M170 118Q168 94 138 96L136 122Q154 126 170 118Z',f:A},{d:'M170 118Q154 128 136 124L137 132Q154 136 168 128Z',f:A},{d:'M150 98Q168 102 170 118Q160 124 150 123Z',f:Ad},{d:'M166 108Q152 102 138 106',s:K,w:2},
@@ -258,7 +300,7 @@ const PS=.9,PW=180,PH=153;
 function raster(items,shade,vb){vb=vb||{w:200,h:170,ox:0,oy:0};const PW=Math.round(vb.w*PS),PH=Math.round(vb.h*PS);
   const cnv=document.createElement('canvas');cnv.width=PW;cnv.height=PH;const x=cnv.getContext('2d');
   x.setTransform(PS,0,0,PS,vb.tr?-vb.ox*PS:0,vb.tr?-vb.oy*PS:0);x.lineCap='round';x.lineJoin='round';
-  for(const it of items){const p=new Path2D(it.d);if(it.f){x.fillStyle=it.f;x.fill(p)}else{x.strokeStyle=it.s;x.lineWidth=it.w;x.stroke(p)}}
+  for(const it of items){const p=new Path2D(it.d);if(it.m){x.save();x.transform(...it.m)}if(it.f){x.fillStyle=it.f;x.fill(p)}else{x.strokeStyle=it.s;x.lineWidth=it.w;x.stroke(p)}if(it.m)x.restore()}
   const im=x.getImageData(0,0,PW,PH),d=im.data,on=new Uint8Array(PW*PH);
   for(let i=0;i<PW*PH;i++){on[i]=d[i*4+3]>=110?1:0;d[i*4+3]=on[i]?255:0}
   if(shade){
@@ -281,6 +323,17 @@ function raster(items,shade,vb){vb=vb||{w:200,h:170,ox:0,oy:0};const PW=Math.rou
     else if(!on[i+1]&&X/PS+vb.ox>90){d[i*4]=d[i*4]*.75+120*.25;d[i*4+1]=d[i*4+1]*.75+140*.25;d[i*4+2]=d[i*4+2]*.75+220*.25}}
   x.putImageData(im,0,0);return cnv;
 }
+// Vesper, Morwen's familiar: a black cat with violet eyes and a ribbon collar, crouched to pounce
+function catArt(){const B='#16121c',B2='#221a2a',hl='#3a2e48',eye='#c89aff';
+  const it=[{d:'M80 100Q104 98 106 78Q108 64 98 62Q102 76 94 86Q86 94 78 92Z',f:B},{d:'M98 64Q104 70 102 80',s:hl,w:1.2},
+    {d:E(66,90,24,18),f:B},{d:'M48 84Q60 76 82 78',s:hl,w:1.4},{d:E(58,96,12,12),f:B2},
+    {d:E(50,62,17,15),f:B},{d:'M36 54L37 36L49 48Z',f:B},{d:'M54 46L63 31L67 50Z',f:B},{d:'M38.5 50L39 40L46 47Z',f:'#4a2a4a'},{d:'M57 46L62 36L64.5 48Z',f:'#4a2a4a'},
+    {d:'M40 52Q48 48 58 50',s:hl,w:1.2},
+    {d:E(44,61,3.6,2.8),f:eye},{d:E(56,61,3.6,2.8),f:eye},{d:Rc(43.5,58.8,1,4.4),f:'#1a0a2a'},{d:Rc(55.5,58.8,1,4.4),f:'#1a0a2a'},{d:Rc(42.6,59.6,.9,.9),f:'#ffffff'},{d:Rc(54.6,59.6,.9,.9),f:'#ffffff'},
+    {d:'M48.6 67L51.4 67L50 68.8Z',f:'#8a4a6a'},{d:'M47 69L36 67M47 70L37 72M53 69L64 67M53 70L63 72',s:'#6a5a7a',w:.6},
+    {d:'M38 74Q50 80 62 74',s:'#6a3aa0',w:2.4},{d:C(50,79,2.2),f:'#d4c27a'},{d:C(50,79,1.1),f:'#9a5ae0'},
+    {d:E(52,107,6,3.4),f:B},{d:E(66,107,6,3.4),f:B},{d:E(82,106,6,3.2),f:B}];
+  const c=raster(it,true,{w:120,h:120,ox:0,oy:0});return c}
 function archerArt(){
   const sk='#e2b896',skS=mix(sk,'#5a3050',.25),hr='#8a3a1a',hrD=mix(hr,'#000000',.4),jk='#6a4426',jkD=mix(jk,'#000000',.4),jkL=mix(jk,'#ffffff',.18),bow='#4a2a12',str='#e8dcc0',K='#2a1a10';
   const it=[{d:'M40 120Q40 96 46 86L74 86Q80 96 80 120Z',f:'#3a2a1a'},

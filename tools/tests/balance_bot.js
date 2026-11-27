@@ -3,6 +3,8 @@
 window.__bal={pt:0,et:0,falls:0,minHp:100,taken:0,foeHeal:0,maxHit:0,hits:[]};
 (()=>{const _hurt=hurtMe;hurtMe=function(d,label,back){const h0=hp;_hurt(d,label,back);const lost=h0-hp;if(lost>0&&!back){__bal.taken+=lost;__bal.hits.push(lost);__bal.maxHit=Math.max(__bal.maxHit,lost)}if(lost>0&&back)__bal.taken+=lost;__bal.minHp=Math.min(__bal.minHp,hp)};
   const _after=afterTurn;afterTurn=function(){if(hp<=0&&piece()>0)__bal.falls++;return _after()};
+  {const _rl=runLackey;runLackey=function(){__bal.fam=(__bal.fam||0)+1;return _rl()}}
+  if(typeof runFamiliar==='function'){const _rf=runFamiliar;runFamiliar=function(){__bal.fam=(__bal.fam||0)+1;return _rf()}}
   const _em=enemyMove;enemyMove=function(){__bal.et++;return _em()};
   const _res=resolve;resolve=function(gs,b,x,y,isM,m,hg){const f0=foeHp;const r=_res(gs,b,x,y,isM,m,hg);if(foeHp>f0)__bal.foeHeal+=foeHp-f0;return r}})();
 window.__botAct=function(){

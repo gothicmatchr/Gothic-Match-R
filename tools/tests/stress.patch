@@ -15,10 +15,10 @@
  function sayL(t){const b=$('lspeech');b.firstChild.textContent=t;b.classList.remove('on');void b.offsetWidth;b.classList.add('on');clearTimeout(b._h);b._h=setTimeout(()=>b.classList.remove('on'),3000)}
 -function runLackey(){
 +function runLackey(){window.__lk=(window.__lk||0)+1;
-   state='lackey';say('lackey',true);const L=$('lackey');if(!L.firstChild)L.appendChild(archerArt());
+   state='lackey';say('lackey',true);const L=$('lackey');if(L.dataset.who!=='archer'){L.innerHTML='';L.appendChild(archerArt());L.dataset.who='archer'}
    L.classList.remove('on','shoot');void L.offsetWidth;L.classList.add('on');
    pop('<span style="color:#c8a070">'+LACKEY.name+' the archer!</span><small>Varro summons his lackey</small>','foe');
-@@ -796,3 +796,15 @@
+@@ -824,3 +824,15 @@
      const hl=Math.min(Math.round(roundMax*.2),MAXHP-hp);if(hl>0){hp+=hl;flyIcon(b,$('vbMe'),icons[GREEN],3,renderMe)}
      renderGauges();if(foeHp<=0)win();else if(rageQueued){rageQueued=false;startRage()}}));
  const ro=new ResizeObserver(resize);ro.observe(cv);resize();sizeFx();battle();requestAnimationFrame(frame);

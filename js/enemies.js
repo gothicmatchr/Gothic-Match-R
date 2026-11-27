@@ -3,7 +3,7 @@
 const FOES=[
  {key:'Varro',name:'Varro of Szarronetska',lackey:1,serrated:1,rest:{rU:-40,rF:-115},theme:1,powerAll:1,expr:'weary',hp:520,hit:3,big:20,cap:12,arm:[[3,1,110],[4,5,120],[1,3,130],[5,4,160]],skin:'#dcb49c',hair:'#2a1a14',cape:'#2a1418',lining:'#6a1a24',gem:'#c02030',style:'short',beard:1,cloth:'#4a3226',armour:'#a9b2bc',iris:'#5a3a1e',trim:'#c9a23a',scene:{win:['#3a1a2a','#a0503a','#f0b070'],stone:'#2a2026'},eye:'#2a1a12',
   plea:'Enough! I yield. I only took to the road to feed my crew.',spare:'Varro bows low and slips away into the hills. The road is safe again.',kill:'Varro falls. His crew scatters without a leader.'},
- {key:'Morwen',name:'Sister Morwen',theme:2,hp:560,hit:3,big:24,cap:12,arm:[[5,4,120],[1,3,130],[4,5,140],[3,1,170]],skin:'#f0dcd4',hair:'#1a1024',cape:'#1e1430',lining:'#4a2a6a',gem:'#9a5ae0',style:'long',fem:1,top:'#2e2142',cloth:'#2a1d3c',armour:'#6e5a8a',iris:'#5a8a6a',trim:'#d4c27a',scene:{win:['#0a1028','#2a3e7a','#9ab0e8'],stone:'#201c2a'},eye:'#1c1030',
+ {key:'Morwen',name:'Sister Morwen',theme:2,petite:1,dagger:1,familiar:1,powerAll:1,steal:14,rest:{rU:-10,rF:-165},hp:560,hit:3,big:24,cap:12,arm:[[5,4,120],[1,3,130],[4,5,140],[3,1,170]],skin:'#f0dcd4',hair:'#1a1024',cape:'#1e1430',lining:'#4a2a6a',gem:'#9a5ae0',style:'long',fem:1,top:'#2e2142',cloth:'#2a1d3c',armour:'#6e5a8a',iris:'#5a8a6a',trim:'#d4c27a',scene:{win:['#0a1028','#2a3e7a','#9ab0e8'],stone:'#201c2a'},eye:'#1c1030',
   plea:'You broke my wards... Spare me and I\'ll trouble no village again.',spare:'Morwen pulls up her hood and vanishes in a swirl of violet smoke.',kill:'Morwen\'s staff splinters, and the curse on the valley lifts.'},
  {key:'Oren',name:'Captain Oren',hp:600,hit:4,big:28,cap:11,arm:[[1,5,125],[3,4,140],[5,1,150],[4,3,185]],skin:'#cfa88e',hair:'#6a6660',cape:'#14241e',lining:'#2a5a46',gem:'#3ac08a',style:'crop',scar:1,stubble:1,cloth:'#3a3a2a',armour:'#7d8a6a',iris:'#4a5a6a',trim:'#b08a3a',scene:{win:['#1c2234','#56688a','#c8c0b0'],stone:'#24222a'},eye:'#1a1a12',
   plea:'Stand down... I yield. The garrison is yours.',spare:'Oren salutes, gathers his men and marches them home.',kill:'Oren falls, and the garrison gates swing open.'},
@@ -19,6 +19,7 @@ const ENEMY_LINES={
   armour:["My wards crack... how quaint.","Thou breakest silver. Silver remembers."],hurt:["Pain is but a door. I know every hinge.","Mm. Thy sting is sweeter than I had hoped."],
   attack:["Bleed for the moon, little moth.","Hush now. Let the dark do its work."],heal:["The night mends what thou tearest.","Blood returns to me, as all things must."],
   rage:["Enough games. Let this hall drink thee whole!","I shall unmake thee, thread by thread!"],low:["The stars... dim. How unexpected.","No... the prophecy spake not of this."],
+  lackey:["Vesper, my sweet... feed.","Go on, kitten. Take a little of their warmth.","Fetch me their heartbeat, Vesper."],
   flinch:["What light is this? Away!"],fall:["Rise, if thou canst. I do so love a second act."]},
  Oren:{intro:["By oath I hold this gate. By oath I shall cut thee down.","Turn back. I have buried enough of thy kind."],
   armour:["Steel fails. Duty does not.","A fine strike. It changes nothing."],hurt:["I have bled on worse fields than this.","Pain is an old comrade."],
