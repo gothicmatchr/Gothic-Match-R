@@ -1,6 +1,7 @@
-# Gem Slide — project notes for Claude
+# Gothic Match R — project notes for Claude
 
-Gem Slide is a gothic match-3 battle game for Android, built by Jamil entirely from his phone
+Gothic Match R (formerly "Gem Slide", renamed to avoid clashing with other games of that name)
+is a gothic match-3 battle game for Android, built by Jamil entirely from his phone
 (Xiaomi 13T). Plain JavaScript + HTML + CSS on a 2D canvas, no framework, no build step.
 Target: Google Play (wrap with Capacitor, AAB, target API 36).
 
@@ -36,7 +37,8 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
 ## Files
 - `index.html` — markup only. Scripts load in order: config, audio, enemies, art, pose, scars, game
   (classic scripts sharing global scope, no modules).
-- `js/config.js` — constants (board size, gem types, timings).
+- `js/config.js` — constants (board size, gem types, timings), and the one-time move of saved data
+  from the old `gemslide-*` localStorage keys to `gothicmatchr-*`.
 - `js/enemies.js` — enemies, armour pieces (weak/resist/durability), dialogue lines.
 - `js/art.js` — procedural pixel art: gems, enemy layers, articulated arm rig parts, backdrop.
 - `js/pose.js` — enemy arm rig animator (threat pose on the enemy turn, sword strikes).

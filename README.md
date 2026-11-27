@@ -1,4 +1,4 @@
-# Gem Slide
+# Gothic Match R
 
 A gothic match-3 battle game for Android. Slide gems, fill buckets, strip the enemy's armour
 before he falls.

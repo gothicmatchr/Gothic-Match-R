@@ -1,5 +1,6 @@
 """Rage layer for the gothic lofi breakcore theme: extra drums and jarring breakcore FX.
 Same tempo, key and 48-bar length as the base loop, so it lines up bar for bar."""
+import os
 from mutil import *
 
 s = Song(170, 'Rage layer (play over base theme)', seed=66)
@@ -83,4 +84,4 @@ for bar in range(5, 48, 3):
         s.bend('Dive Synth', t + i * BEAT / 16, -8192 * i / 8)
     s.bend('Dive Synth', t + BEAT // 2 + 5, 0)
 
-print(round(s.save('/home/claude/music/gothic_rage_layer_170bpm.mid'), 1), 's')
+print(round(s.save(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gothic_rage_layer_170bpm.mid')), 1), 's')

@@ -1,7 +1,7 @@
 """Atmospheric lofi breakcore with gothic synth melodies. D harmonic minor, 170 BPM.
 48 bars = 6 sections of 8 bars. Ends on the A chord so it loops back into Dm."""
 import random
-import mido
+import mido, os
 
 random.seed(13)
 PPQ, BPM = 480, 170
@@ -185,5 +185,5 @@ for name, (ch, prog, evs) in tracks.items():
     now = 0
     for t, _, m in msgs:
         m.time = t - now; now = t; tr.append(m)
-mid.save('/home/claude/music/gothic_lofi_breakcore_170bpm.mid')
+mid.save(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gothic_lofi_breakcore_170bpm.mid'))
 print({k: len(v[2]) for k, v in tracks.items()}, round(mid.length, 1), 's')

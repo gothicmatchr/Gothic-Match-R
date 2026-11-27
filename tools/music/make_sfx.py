@@ -1,7 +1,8 @@
 """Gem sound effects in the gothic breakcore palette (D harmonic minor, music box,
 harpsichord, church organ, choir, tubular bells, chopped breakbeat drums).
 Each effect is its own MIDI file, plus one combined file with a track per effect."""
-import json
+import json, os
+os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), "build", "sfx"), exist_ok=True)
 from mutil import *
 
 SEC = 2 * PPQ  # at 120 BPM one second is two beats
@@ -90,10 +91,10 @@ s.add('Drums', 0, CRASH, 100, t(.8))
 
 meta = {}
 for name, s in FX.items():
-    meta[name] = round(s.save(f'/home/claude/music/sfx/{name}.mid'), 3)
+    meta[name] = round(s.save(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'build', 'sfx', f'{name}.mid')), 3)
 
 # Combined file for FL Studio: each effect on its own track, two seconds apart
-combo = Song(120, 'Gem Slide SFX (each effect 2s apart)')
+combo = Song(120, 'Gothic Match R SFX (each effect 2s apart)')
 off = 0
 for name, s in FX.items():
     for tn, tr in s.tracks.items():
@@ -101,5 +102,5 @@ for name, s in FX.items():
         combo.tracks[key] = dict(ch=tr['ch'], prog=tr['prog'], ev=[(a + off, b, c, d) for a, b, c, d in tr['ev']],
                                  bends=[(a + off, b) for a, b in tr['bends']], br=tr['br'], rv=tr['rv'], pc=off)
     off += t(2)
-combo.save('/home/claude/music/gem_slide_sfx.mid')
+combo.save(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gothic_match_r_sfx.mid'))
 print(json.dumps(meta))

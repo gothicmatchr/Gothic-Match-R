@@ -1,7 +1,7 @@
 """Atmospheric lofi breakcore: keeps the gothic melody/harmony render, replaces the soft
 General MIDI drums with a synthesised breakbeat that is sliced, chopped, stuttered,
 rolled and crushed the way breakcore edits a break. Builds the calm loop and the rage loop."""
-import numpy as np, wave, subprocess, mido
+import numpy as np, wave, subprocess, mido, os
 from scipy.signal import butter, sosfilt
 
 SR = 44100
@@ -11,7 +11,9 @@ S16 = BAR / 16
 BARS = 48
 L = int(round(BARS * BAR * SR))
 rng = np.random.default_rng(170)
-M = '/home/claude/music'
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
+M = os.path.join(HERE, 'build'); os.makedirs(M, exist_ok=True)
 
 def T(d): return np.arange(int(d * SR)) / SR
 def filt(x, kind, f, order=2):
@@ -178,8 +180,8 @@ def write(name, x):
     with wave.open(f'{M}/{name}.wav', 'wb') as w:
         w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes((x * 32767).astype(np.int16).tobytes())
 
-melody_stem(f'{M}/gothic_lofi_breakcore_170bpm.mid', f'{M}/stem_music.wav', {'Drums'})
-melody_stem(f'{M}/gothic_rage_layer_170bpm.mid', f'{M}/stem_ragefx.wav', {'Rage Drums'})
+melody_stem(f'{HERE}/gothic_lofi_breakcore_170bpm.mid', f'{M}/stem_music.wav', {'Drums'})
+melody_stem(f'{HERE}/gothic_rage_layer_170bpm.mid', f'{M}/stem_ragefx.wav', {'Rage Drums'})
 mus = fold(rd2(f'{M}/stem_music.wav'))
 rfx = rd2(f'{M}/stem_ragefx.wav'); rfx = fold(np.stack([filt(rfx[:, c], 'highpass', 50) for c in range(2)], 1))
 for c in range(2): rfx[:, c] = crush(rfx[:, c], 9, 2) * .5 + rfx[:, c] * .5
@@ -193,7 +195,7 @@ for rage in (False, True):
     if rage: mixd += rfx / np.max(np.abs(rfx)) * .42
     mixd = drive(mixd * 1.15, 1.3)
     write('loop_rage' if rage else 'loop', mixd)
-    out = '/home/claude/gemslide/audio/battle_theme' + ('_rage' if rage else '') + '.ogg'
+    out = f'{ROOT}/audio/battle_theme' + ('_rage' if rage else '') + '.ogg'
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', f'{M}/{"loop_rage" if rage else "loop"}.wav', '-c:a', 'libopus', '-b:a', '96k', out], check=True)
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', f'{M}/{"loop_rage" if rage else "loop"}.wav', '-b:a', '160k',
                     f'{M}/{"rage" if rage else "battle"}_breakcore_preview.mp3'], check=True)

@@ -7,8 +7,8 @@ const cv=document.getElementById('c'),ctx=cv.getContext('2d',{willReadFrequently
 let size=300,cell=size/N,dpr=1,sprites=[],icons=[];
 let grid,score=0,best=0,battleScore=0,state='idle',combo=0,popT=0,drag=null,floats=[],lastMoved=null;
 let ammo=0,summoned=false,ward=0,lackeyQ=false,roundMax=MAXHP,money=0,replay=null,firstStep=false,chainN=0,chainBase=0,locked=false,preview=null,charge=null,fz=0,parts=[],flT,em=null,noGauge=false,fi=0,foe,foeHp,hp,turns,cursed,curseNow,gauge,power,pendingTurn,phase,rage,rageQueued,armDur,toastT,hl=null,rq=null;
-try{best=+localStorage.getItem('gemslide-best')||0}catch(e){}
-try{money=+localStorage.getItem('gemslide-gold')||0}catch(e){}
+try{best=+localStorage.getItem('gothicmatchr-best')||0}catch(e){}
+try{money=+localStorage.getItem('gothicmatchr-gold')||0}catch(e){}
 
 /* ---------- performance ----------
    Board canvas DPR is capped (pixel art needs no more), the fx overlay runs at a lower DPR, glows are
@@ -73,7 +73,7 @@ let shown=Array(TYPES).fill(0),gaugeWait=Array(TYPES).fill(0),gq=[[],[],[],[],[]
 const ready=t=>shown[t]>=GEMS[t].cap;
 function renderGauges(){for(const t of ATK){if(shown[t]>gauge[t])shown[t]=gauge[t]}
   $('gauges').querySelectorAll('.g').forEach((b,j)=>{const t=ATK[j];b.querySelector('i').style.width=(shown[t]/GEMS[t].cap*100)+'%';b.classList.toggle('full',ready(t))})}
-function addMoney(d){money=Math.max(0,money+d);hud();try{localStorage.setItem('gemslide-gold',money)}catch(e){}}
+function addMoney(d){money=Math.max(0,money+d);hud();try{localStorage.setItem('gothicmatchr-gold',money)}catch(e){}}
 function hud(){$('money').textContent=money}
 function pop(html,side){side=side||'me';const fd=$('feed-'+side);while(fd.children.length>=4)fd.lastChild.remove();const d=document.createElement('div');d.className='pop';d.innerHTML=html;fd.prepend(d)}
 function clearLog(){roundMax=MAXHP;$('feed-me').innerHTML='';$('feed-foe').innerHTML=''}
@@ -266,7 +266,7 @@ function rageTick(dt){
   }
 }
 function overlay(html){const o=$('over');o.innerHTML=html;o.classList.add('on')}
-function saveBest(){if(score>best){best=score;try{localStorage.setItem('gemslide-best',best)}catch(e){}}hud()}
+function saveBest(){if(score>best){best=score;try{localStorage.setItem('gothicmatchr-best',best)}catch(e){}}hud()}
 function win(){$('speech').classList.remove('on');
   const n=armDur.filter(d=>d<=0).length,bonus=n*300+(n===4?1000:0);score+=bonus;
   state='over';$('foe').classList.add('down');$('stage').classList.remove('rage');saveBest();
@@ -424,7 +424,7 @@ function burstAt(r0,c0,rad,ok,perfect){
   const cells=new Set([r0*N+c0]);
   for(let r=Math.max(0,r0-rad);r<=Math.min(N-1,r0+rad);r++){const t=grid[r][c0].t;if(r!==r0&&(t===SP||t===SL))continue;cells.add(r*N+c0)}
   const n=1;delayQ+=n;let earned=0;for(let i=0;i<n;i++)earned+=8+Math.floor(Math.random()*5);money+=earned;hud();floats.push({s:'+'+earned+' gold',x:c0+.5,y:r0+.9,life:1.6});
-  try{localStorage.setItem('gemslide-gold',money)}catch(e){}
+  try{localStorage.setItem('gothicmatchr-gold',money)}catch(e){}
   let reds=[];if(perfect){for(let r=0;r<N;r++)for(let c=0;c<N;c++){const k=r*N+c;if(!cells.has(k)&&grid[r][c].t===RED)reds.push(k)}
     reds=reds.filter(k=>{const t=grid[Math.floor(k/N)][k%N].t;return t!==SP&&t!==SL});reds.sort(()=>Math.random()-.5);reds=reds.slice(0,PERFECT_REDS);reds.forEach(k=>cells.add(k))}
   const gs=finishBlast(cells,20*rad+30*(n-1),c0+.5,r0+.5,true);
@@ -715,7 +715,7 @@ $('gauges').querySelectorAll('.g').forEach((b,j)=>b.addEventListener('click',()=
     // bucket bonuses fly to where they land instead of being described
     if(t===4){ammo++;const a=$('ammoTag'),was=!a.hidden;renderMe();if(!was)a.classList.add('due');flyIcon(b,a,icons[4],1,()=>a.classList.remove('due'))}
     if(t===1){ward=1;const w=$('wardTag');renderMe();w.classList.add('due');flyIcon(b,w,icons[1],1,()=>w.classList.remove('due'))}
-    if(t===3){money+=15;try{localStorage.setItem('gemslide-gold',money)}catch(e){}flyIcon(b,$('money').parentNode,icons[3],5,hud)}
+    if(t===3){money+=15;try{localStorage.setItem('gothicmatchr-gold',money)}catch(e){}flyIcon(b,$('money').parentNode,icons[3],5,hud)}
     const hl=Math.min(Math.round(roundMax*.2),MAXHP-hp);if(hl>0){hp+=hl;flyIcon(b,$('vbMe'),icons[GREEN],3,renderMe)}
     renderGauges();if(foeHp<=0)win();else if(rageQueued){rageQueued=false;startRage()}}));
 const ro=new ResizeObserver(resize);ro.observe(cv);resize();sizeFx();battle();requestAnimationFrame(frame);

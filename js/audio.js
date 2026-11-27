@@ -3,9 +3,9 @@
 // Everything starts after the first tap and stops when the game is hidden.
 // The ♪ button opens a panel with Music and Effects volume sliders (remembered).
 const Vol=(()=>{let bgm=.8,sfx=.8;
-  try{const v=JSON.parse(localStorage.getItem('gemslide-vol')||'null');
-    if(v){bgm=+v.bgm;sfx=+v.sfx}else if(localStorage.getItem('gemslide-music')==='off'){bgm=0;sfx=0}}catch(e){}
-  const save=()=>{try{localStorage.setItem('gemslide-vol',JSON.stringify({bgm,sfx}))}catch(e){}};
+  try{const v=JSON.parse(localStorage.getItem('gothicmatchr-vol')||'null');
+    if(v){bgm=+v.bgm;sfx=+v.sfx}else if(localStorage.getItem('gothicmatchr-music')==='off'){bgm=0;sfx=0}}catch(e){}
+  const save=()=>{try{localStorage.setItem('gothicmatchr-vol',JSON.stringify({bgm,sfx}))}catch(e){}};
   return{get bgm(){return bgm},get sfx(){return sfx},set bgm(v){bgm=v;save()},set sfx(v){sfx=v;save()}};
 })();
 let audioUnlocked=false;

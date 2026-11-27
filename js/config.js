@@ -1,4 +1,6 @@
-// Game settings and balance values. Tune numbers here.
+// Gothic Match R: game settings and balance values. Tune numbers here.
+// Saved data moved from the old name's keys (gemslide-*) to gothicmatchr-*, once, keeping players' gold and settings.
+try{for(const k of['gold','best','vol','music']){const o=localStorage.getItem('gemslide-'+k);if(o!==null){if(localStorage.getItem('gothicmatchr-'+k)===null)localStorage.setItem('gothicmatchr-'+k,o);localStorage.removeItem('gemslide-'+k)}}}catch(e){}
 // Board: N x N grid. Gem types: 0 Diamond (enemy), 1 Shield, 2 Plus (heal), 3 Coin, 4 Square, 5 Star. SP = force gem, SL = slingshot gem.
 const TEST_SLINGS=true;// testing: start each battle with 3 slingshot gems
 const N=7,TYPES=6,SP=6,SL=7,POP=0.5,MAXHP=100,EVERY=2,DMG=3,RED=0,GREEN=2,COIN=3,STAR=5,COIN_GOLD=1,ATK=[1,3,4,5];
