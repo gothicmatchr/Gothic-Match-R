@@ -58,8 +58,13 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
 - Coins: your coin matches give 1 gold per coin gem, no damage, still fill the Coin bucket.
   Enemy coin matches take half that (rounded) from your gold, no damage.
 - Your green matches never heal the enemy.
-- Enemy acts every 2 of your turns; matches all gems; tries to heal 80% of the time, else
-  looks for 4 of a kind, then a multi-strike. Delays apply at end of your turn, capped at 2.
+- Enemy acts every 2 of your turns, and always after at most 3 (`QUIET_MAX`) whatever delays are
+  stacked. Making specials no longer delays him; force gem use still does (+1, capped at 2).
+  He matches all gems; goes for a heal only below 75% HP and then 35% of the time (`HEAL_BELOW`,
+  `HEAL_CHANCE`), else looks for 4 of a kind, then a multi-strike. One enemy turn can take at most
+  45 HP (`TURN_CAP`). Blows of 18+ (`BIG_HIT`) get a heavy slam, hit-stop and a triumphant shout
+  (once per turn). Every blow plays `Sfx.hit` and shows a red damage number by your HP bar.
+- Idle taunts: after 14–24 s without input on your turn, 70% chance the enemy taunts (`IDLE_TAUNT`).
 - If your HP hits 0 the enemy regains its last broken armour piece and your HP refills.
 - Rage at one armour piece left: enemy destroys ~30% of gems, refilled with Plus gems;
   music crossfades to the rage version.
@@ -87,8 +92,11 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
   (`Sfx.spill`); a weak slingshot pull makes the band go slack and wobble (`Sfx.snap`); in Star
   power, tapping a special gem wiggles it and clunks. No opening tutorial toast, no Star prompt.
 - Multi-strike: matching 2–4 gem types in one move replays effects as separate rounds (up to 4).
-- Match chains: cascades from your own move show "Chain x2/x3…"; each link cuts the enemy's
-  Summon/Power bar by 1/5.
+- Match chains: each cascade link multiplies damage and bucket fill (x2, x3…) for you; the enemy's
+  chains multiply his damage up to x2 (`FOE_CHAIN_MAX`). A live ×N badge (top right of the board,
+  red for the enemy) grows with each link. Your links also cut the enemy's Summon/Power bar by 1/5.
+- Force chain: 5 notches under each force gem light up per perfect link in a row; the perfect
+  release chime rises in pitch with each link. No text explains it.
 - L/T matches blast their dust outward with a shockwave before it gathers into the buckets.
 - Varro of Szarronetska: Summon bar charges from every gem he matches (and your diamond
   matches); at full it waits and the summon happens at the **end of his own turn**, max once
@@ -102,6 +110,10 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
 
 ## Testing
 - Phone: GitHub Pages link above.
+- Balance: `node tools/tests/balance.js [battlesPerEnemy]` plays full battles with a greedy bot
+  (`balance_bot.js`) on the virtual clock and prints turns, damage taken, hits, falls and outcome.
+  After the difficulty pass (16 battles): 15/16 wins, enemy 4–8 turns per battle, avg hit 12–25,
+  min HP mostly 15–60; before it the enemy got 0–4 turns and the player rarely dropped below 70.
 - Stress bot: `tools/tests/stress.py` plays thousands of actions on a patched copy of the game
   under a virtual clock (`vclock.js`) and reports errors/stuck states. It expects a copy at
   `/tmp/gs_stress2` with `stress.patch` applied to `js/game.js` (adds `window.__api`), and Chrome

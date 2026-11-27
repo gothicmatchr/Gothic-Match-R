@@ -30,4 +30,17 @@ const ENEMY_LINES={
   attack:["Blood for the horde!","CRUSH! BREAK! FEAST!"],heal:["Dask feeds upon thy fear!","Wounds close. Hunger grows."],
   rage:["Now thou seest the beast! RAAAH!","I'll paint these walls with thee!"],low:["Dask... does not... kneel!","The horde shall avenge me!"],
   flinch:["What trickery is THAT?!"],fall:["HAHA! Get up! I'm not done chewing!"]}};
+// triumph: shouted after a big blow lands. taunt: now and then when the player sits idle on their turn.
+Object.assign(ENEMY_LINES.Varro,{
+  triumph:["HA! Didst thou see that? Varro the Unbroken!","Feel that? That is LEGEND, whelp!","Ha-HA! I meant that. Every bit of it!"],
+  taunt:["Well? Art thou praying, or merely lost?","Take thy time! I'm in no hurry. None at all.","Dost thou fear me? Wise. Very wise."]});
+Object.assign(ENEMY_LINES.Morwen,{
+  triumph:["Ahh... I felt thee crack, little moth.","There. Was that not lovely?","The candles flare for thee."],
+  taunt:["So still. Like the ones I keep.","Linger, child. The dark is patient.","Shall I count thy heartbeats while thou dither?"]});
+Object.assign(ENEMY_LINES.Oren,{
+  triumph:["That is how the garrison fights.","Yield. I'll not ask twice.","Steady hands. Clean strike."],
+  taunt:["Hesitation gets soldiers killed.","Make thy move. The watch grows long.","I have waited out sieges. I can wait out thee."]});
+Object.assign(ENEMY_LINES.Dask,{
+  triumph:["CRUSHED! HAHA!","Did that rattle thy bones?! AGAIN!","THAT is how Dask fights!"],
+  taunt:["Bored! Dask is BORED!","Move, worm, or I'll move thee!","Art thou asleep? WAKE UP AND FIGHT!"]});
 for(const f of FOES)f.lines=ENEMY_LINES[f.key]||{};

@@ -117,16 +117,25 @@ function fire(t,src,only){Sfx.bucket();
 }
 let slashes=[];
 let swingT;
-function enemyStrikeFx(big){Pose.strike(()=>slashLand(big))}
-function slashLand(big){
+function enemyStrikeFx(d){Pose.strike(()=>slashLand(d))}
+// the blow lands: impact sound, a red damage number by your HP bar, a heavier slam and a short hit-stop for big hits
+let hitStop=0,triumphSaid=false;
+// the enemy taunts now and then if you sit idle on your turn
+let lastAct=performance.now(),tauntAt=IDLE_TAUNT[0]+Math.random()*IDLE_TAUNT[1];
+addEventListener('pointerdown',()=>{lastAct=performance.now()},true);
+function idleTaunt(now){if(state!=='idle'||locked||phase==='enemy'){lastAct=now;return}
+  if(now-lastAct>tauntAt*1000){lastAct=now;tauntAt=IDLE_TAUNT[0]+Math.random()*IDLE_TAUNT[1];if(Math.random()<.7)say('taunt',true)}}
+function slashLand(d){const big=d>=BIG_HIT;Sfx.hit(big);
+  if(d>0)floats.push({s:'-'+d,x:.75,y:N*.55,life:1.4,col:'#ff5a6a',big});
+  if(big){hitStop=.09;const m=$('main');m.classList.remove('hurt');flash(m,'slam');buzz([90,40,180]);if(!triumphSaid){triumphSaid=true;say('triumph',true)}}else shake();
   const fl=$('hurtflash');fl.classList.remove('on');void fl.offsetWidth;fl.classList.add('on');
   const vb=document.querySelector('.vbar.me');vb.classList.remove('hurt');void vb.offsetWidth;vb.classList.add('hurt');
   const br=cv.getBoundingClientRect();const n=big?5:3;
   for(let i=0;i<n;i++)slashes.push({x:br.left+br.width*(.2+.6*Math.random()),y:br.top+br.height*(.15+.5*Math.random()),a:-.9+Math.random()*.4,len:br.width*(big?.7:.45),t:-i*.06,w:big?9:6});
 }
 function hurtMe(d,label,backlash){
-  if(ward&&!backlash){ward=0;renderMe();pop('<span style="color:#8fc8ff">Blocked!</span><small>'+label+' stopped by your ward</small>','foe');const vb=$('vbMe');vb.classList.remove('heal');void vb.offsetWidth;vb.classList.add('heal');buzz(30);if(!backlash)enemyStrikeFx(false);return}
-  if(curseNow)d=Math.round(d/2);hp=Math.max(0,hp-d);renderMe();buzz(d>=15?[80,40,160]:90);shake();if(backlash){const fl=$('hurtflash');fl.classList.remove('on');void fl.offsetWidth;fl.classList.add('on')}else enemyStrikeFx(d>=15);
+  if(ward&&!backlash){ward=0;renderMe();pop('<span style="color:#8fc8ff">Blocked!</span><small>'+label+' stopped by your ward</small>','foe');const vb=$('vbMe');vb.classList.remove('heal');void vb.offsetWidth;vb.classList.add('heal');buzz(30);if(!backlash)enemyStrikeFx(0);return}
+  if(curseNow)d=Math.round(d/2);if(!backlash){d=Math.max(0,Math.min(d,TURN_CAP-turnDmg));turnDmg+=d;if(!d)return}hp=Math.max(0,hp-d);renderMe();if(backlash){buzz(90);shake();const fl=$('hurtflash');fl.classList.remove('on');void fl.offsetWidth;fl.classList.add('on')}else enemyStrikeFx(d);
   pop('<span style="color:#ff4d5e">'+label+' -'+d+'</span>','foe');
 }
 function resolve(gs,bonus,x,y,isMatch,mult,healGreens){mult=mult||1;
@@ -134,7 +143,7 @@ function resolve(gs,bonus,x,y,isMatch,mult,healGreens){mult=mult||1;
     if(coins){const st=Math.min(money,Math.round(coins*COIN_GOLD*mult/2));if(st>0){addMoney(-st);pop('<span style="color:#d4af37">'+foe.name.split(' ')[0]+' pockets '+st+' gold</span>','foe')}}
     if(greens){const h=Math.min(greens*3*mult,foe.hp-foeHp);foeHp+=h;if(h)pop('<span style="color:#5fdc7a">'+foe.name.split(' ')[0]+' heals +'+h+'</span>','foe')}
     if(foe.powerAll)power+=(hits+greens+coins)*mult;
-    if(hits){hurtMe(hits*foe.hit*mult,foe.name.split(' ')[0]+' strikes!');if(!foe.powerAll)power+=reds}
+    const cm=Math.min(FOE_CHAIN_MAX,Math.max(1,combo));if(hits){hurtMe(hits*foe.hit*mult*cm,foe.name.split(' ')[0]+' strikes!');if(!foe.powerAll)power+=reds}
     renderFoe();return}
   let pts=bonus,reds=0,greens=0,coins=0;const add=Array(TYPES).fill(0);
   for(const g of gs){const t=g.t;if(t===SP||t===SL)continue;
@@ -143,7 +152,8 @@ function resolve(gs,bonus,x,y,isMatch,mult,healGreens){mult=mult||1;
   pts*=Math.max(1,combo)*mult;
   const healer=false;let hits=0;for(const g of gs)if(g.t!==RED&&g.t!==SP&&g.t!==SL&&g.t!==COIN&&!(g.t===GREEN&&isMatch&&healer))hits++;
   if(coins){const gg=Math.round(coins*COIN_GOLD*mult);addMoney(gg);floats.push({s:'+'+gg+' gold',x,y:y+.45,life:1.3})}
-  if(hits&&foeHp>0){foeHp=Math.max(0,foeHp-Math.round(hits*DMG*mult));if(hits*DMG*mult>=15)Scars.skin(hits*DMG*mult>=27?2:1);const f=$('foe');f.classList.remove('hit');void f.offsetWidth;f.classList.add('hit')}
+  const cm=isMatch?Math.max(1,combo):1;  // cascade chains multiply damage and bucket fill
+  if(hits&&foeHp>0){const dm=hits*DMG*mult*cm;foeHp=Math.max(0,foeHp-Math.round(dm));if(dm>=15)Scars.skin(dm>=27?2:1);const f=$('foe');f.classList.remove('hit');void f.offsetWidth;f.classList.add('hit')}
   if(pts)score+=pts;
   if((isMatch||healGreens)&&greens){
     if(healer){const h=Math.min(greens*3*mult,foe.hp-foeHp);foeHp+=h;if(h)pop('<span style="color:#5fdc7a">'+foe.name.split(' ')[0]+' recovers +'+h+'</span>','foe')}
@@ -152,7 +162,7 @@ function resolve(gs,bonus,x,y,isMatch,mult,healGreens){mult=mult||1;
   if(isMatch&&reds){
     hurtMe(reds*foe.hit,'Diamonds burn you',true);power+=reds;
   }
-  if(!noGauge){for(const t of ATK)gauge[t]=Math.min(GEMS[t].cap,gauge[t]+add[t]*mult);for(const g of gs)if(ATK.includes(g.t)&&gq[g.t].length<60)gq[g.t].push(GEMS[g.t].pts*mult)}
+  if(!noGauge){for(const t of ATK)gauge[t]=Math.min(GEMS[t].cap,gauge[t]+add[t]*mult*cm);for(const g of gs)if(ATK.includes(g.t)&&gq[g.t].length<60)gq[g.t].push(GEMS[g.t].pts*mult*cm)}
   renderGauges();renderFoe();hud();
 }
 function afterTurn(){
@@ -173,15 +183,15 @@ function afterTurn(){
       phase=prev;combo=0;state='replayWait';setTimeout(()=>{if(state==='replayWait'){state='idle';afterTurn()}},700)},900);return}
   if(phase==='enemy'&&power>=foe.cap&&!summoned){summoned=true;power-=foe.cap;renderFoe();if(foe.lackey)return runLackey();hurtMe(foe.big,'Power attack!')}
   if(phase==='enemy'){phase='player';curseNow=false;summoned=false}
-  else{const used=pendingTurn;pendingTurn=false;if(used)turns--;if(delayQ){turns=Math.min(MAX_TURNS,turns+delayQ);delayQ=0;const tb=$('turns');tb.classList.remove('bump');void tb.offsetWidth;tb.classList.add('bump')}
-    if(turns<=0){turns=EVERY;renderFoe();return enemyMove()}}
+  else{const used=pendingTurn;pendingTurn=false;if(used){turns--;quiet++}if(delayQ){turns=Math.min(MAX_TURNS,turns+delayQ);delayQ=0;const tb=$('turns');tb.classList.remove('bump');void tb.offsetWidth;tb.classList.add('bump')}
+    if(turns<=0||quiet>=QUIET_MAX){turns=EVERY;quiet=0;renderFoe();return enemyMove()}}
   renderFoe();
   if(!hasMove()){floats.push({s:'Shuffle!',x:N/2,y:N/2,life:1.2});
     const slots=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const t=grid[r][c].t;if(t!==SP&&t!==SL)slots.push([r,c])}const pool=slots.map(([r,c])=>grid[r][c]);
     let tries=0;do{pool.sort(()=>Math.random()-.5);slots.forEach(([r,c],i)=>grid[r][c]=pool[i]);if(++tries>60)pool.forEach(g=>g.t=rnd())}while((matchesIn(types(),'all').hit.size||!hasMove())&&tries<400);state='falling'}
 }
 function enemyMove(){
-  state='enemy';curseNow=false;cursed=false;renderFoe();toast(foe.name+' makes a move…');shake();buzz(40);
+  turnDmg=0;triumphSaid=false;state='enemy';curseNow=false;cursed=false;renderFoe();toast(foe.name+' makes a move…');shake();buzz(40);
   setTimeout(()=>{
     if(state!=='enemy')return;
     const m=bestEnemyMove();phase='enemy';
@@ -192,9 +202,9 @@ function enemyMove(){
     else{hurtMe(foe.hit*2,foe.name.split(' ')[0]+' lunges!');state='idle';afterTurn()}
   },900);
 }
-let healMode=false;
+let healMode=false,quiet=0,turnDmg=0;
 function bestEnemyMove(){
-  healMode=Math.random()<.8;
+  healMode=foeHp<foe.hp*HEAL_BELOW&&Math.random()<HEAL_CHANCE;
   const T0=types();let best=null,bs=0;
   for(const axis of['h','v'])for(let i=0;i<N;i++){const L0=lineOf(T0,axis,i);
     for(let o=0;o<N;o++){if(L0[o]===SP||L0[o]===SL)continue;const[lo,hi]=span(L0,o,axis);
@@ -313,19 +323,22 @@ function fill(){
   do{grid=[];for(let r=0;r<N;r++){grid.push([]);for(let c=0;c<N;c++){let t;do{t=rnd()}while((c>1&&grid[r][c-1].t===t&&grid[r][c-2].t===t)||(r>1&&grid[r-1][c].t===t&&grid[r-2][c].t===t));grid[r].push(gem(t,c,r-N-1))}}}while(!hasMove()&&Math.random()<.999);
 }
 function battle(){
-  foe=FOES[fi];foeHp=foe.hp;hp=MAXHP;turns=EVERY;cursed=false;curseNow=false;gauge=Array(TYPES).fill(0);shown=Array(TYPES).fill(0);gq=[[],[],[],[],[],[]];gaugeWait=Array(TYPES).fill(0);power=0;pendingTurn=false;battleScore=score;
+  foe=FOES[fi];foeHp=foe.hp;hp=MAXHP;turns=EVERY;quiet=0;cursed=false;curseNow=false;gauge=Array(TYPES).fill(0);shown=Array(TYPES).fill(0);gq=[[],[],[],[],[],[]];gaugeWait=Array(TYPES).fill(0);power=0;pendingTurn=false;battleScore=score;
   ammo=0;phase='player';forges=[];popExtra=0;delayQ=0;ward=0;lackeyQ=false;arrow=null;em=null;slashes=[];fxp=[];rings=[];preview=null;$('lackey').classList.remove('on','shoot');$('speech').classList.remove('on');sayT=0;noGauge=false;rage=false;charge=null;proj=null;chainN=0;replay=null;boxParts=[];dust=[];parts=[];rageQueued=false;armDur=foe.arm.map(a=>a[2]);rq=null;hl=null;combo=0;drag=null;floats=[];lastMoved=null;
   $('foe').className='';buildFoe(foe);clearLog();lowSaid=false;setTimeout(()=>say('intro',true),700);$('stage').classList.remove('rage');
   $('over').classList.remove('on');fill();if(TEST_SLINGS)[[6,1],[6,3],[6,5]].forEach(([r,c])=>grid[r][c].t=SL);state='falling';renderFoe();renderMe();renderGauges();hud();
 }
+// live cascade multiplier badge on the board: grows with each link; red when it's the enemy's chain
+function showMult(n,foeSide){const m=$('mult');m.textContent='×'+n;m.className='mult on'+(foeSide?' foe':'')+' l'+Math.min(n,5);flash(m,'kick')}
+function hideMult(){$('mult').classList.remove('on')}
 function step(){
   const{hit,bonus,big}=matchesIn(types(),'all');
-  if(!hit.size){combo=0;noGauge=false;firstStep=false;state='idle';afterTurn();return}
+  if(!hit.size){hideMult();combo=0;noGauge=false;firstStep=false;state='idle';afterTurn();return}
   combo++;const made=new Set(),byCol={};
   if(combo>=2&&phase==='player'){  // match chain: a cascade from your own move. Each link knocks 1/5 off the enemy's summon/power bar
     const cut=foe.cap/5,had=power;power=Math.max(0,power-cut);renderFoe();
-    floats.push({s:'Chain x'+combo+'!',x:N/2,y:N/2-.6,life:1.5});
-    pop('<span style="color:#ffd166">Chain x'+combo+'!</span>'+(had>0?'<small>'+(foe.lackey?'Summon':'Power')+' bar -20%</small>':''));buzz(20)}
+    pop('<span style="color:#ffd166">Chain x'+combo+'!</span>');buzz(20)}
+  if(combo>=2)showMult(combo,phase==='enemy');
   hit.forEach(k=>{const r=Math.floor(k/N),c=k%N,t=grid[r][c].t;if(t===SP)return;(byCol[t]=byCol[t]||{n:0,x:0,y:0}).n++;byCol[t].x+=c;byCol[t].y+=r});
   const mk=new Map();if(phase!=='enemy')for(const a of big){if(a.some(k=>made.has(k)))continue;let k=a.find(k=>grid[Math.floor(k/N)][k%N]===lastMoved);if(k===undefined)k=a[0];made.add(k);mk.set(k,a.shape==='LT'?SL:SP)}
   for(const a of big){if(a.shape!=='LT')continue;const k=a.find(q=>made.has(q));let cx,cy;if(k!==undefined){cx=k%N+.5;cy=Math.floor(k/N)+.5}else{cx=a.reduce((v,q)=>v+q%N,0)/a.length+.5;cy=a.reduce((v,q)=>v+Math.floor(q/N),0)/a.length+.5}
@@ -335,8 +348,7 @@ function step(){
   hit.forEach(k=>{const g=grid[Math.floor(k/N)][k%N];sx+=k%N;sy+=Math.floor(k/N);if(made.has(k)){gs.push({t:g.t});g.t=mk.get(k);g.forge=0;const grp=big.find(a=>a.includes(k))||[k];Sfx.forge();forges.push({x:k%N,y:Math.floor(k/N),t:0,sl:g.t===SL,src:grp.filter(q=>q!==k).map(q=>({x:q%N,y:Math.floor(q/N),col:COLORS[gs[0]?.t??0]}))})}else{g.pop=true;gs.push(g)}});
   const kinds=Object.keys(byCol).filter(t=>phase==='enemy'||+t!==RED).length,dbl=firstStep&&kinds>=2;firstStep=false;
   if(dbl){const hits=Math.min(4,kinds);floats.push({s:'MULTI-STRIKE x'+hits+'!',x:N/2,y:N/2,life:1.8});pop('<span style="color:#ff9ad5">Multi-strike x'+hits+'!</span><small>'+(hits-1)+' more strike'+(hits>2?'s':'')+' follow</small>',phase==='enemy'?'foe':'me');shake();buzz([30,40,60]);
-    replay={left:hits-1,n:2,ph:phase,gs:gs.map(g=>({t:g.t,x:g.x,y:g.y})),bonus,x:sx/hit.size+.5,y:sy/hit.size+.5,delay:phase!=='enemy'?big.length:0}}
-  if(phase!=='enemy'&&big.length){delayQ+=big.length;}
+    replay={left:hits-1,n:2,ph:phase,gs:gs.map(g=>({t:g.t,x:g.x,y:g.y})),bonus,x:sx/hit.size+.5,y:sy/hit.size+.5,delay:0}}
   made.forEach(k=>{const r=Math.floor(k/N),c=k%N;floats.push({s:mk.get(k)===SL?'Slingshot!':'Force gem!',x:c+.5,y:r+.1,life:1.6})});
   resolve(gs,bonus,sx/hit.size+.5,sy/hit.size+.5,true,1);buzz(combo>1?30:15);
   if(ox===null){ox=sx/hit.size;oy=sy/hit.size}setPopOrder(ox,oy);
@@ -406,7 +418,7 @@ function finishBlast(cells,bonus,x,y,keepSL,healGreens,free,mult){
 const burstSize=f=>Math.min(7,1+Math.floor(f/.12));
 function startCharge(){charge={r:drag.r,c:drag.c,g:drag.g,f:0,T:.7+Math.random()*.1,lv:1};state='charging';buzz(15)}
 function burstAt(r0,c0,rad,ok,perfect){
-  clearLog();if(ok!==false)Sfx.gold(!!perfect);
+  clearLog();if(ok!==false)Sfx.gold(!!perfect,perfect?chainN:0);  // each chain link rings higher
   if(!perfect)chainN=0;
   const cells=new Set([r0*N+c0]);
   for(let r=Math.max(0,r0-rad);r<=Math.min(N-1,r0+rad);r++){const t=grid[r][c0].t;if(r!==r0&&(t===SP||t===SL))continue;cells.add(r*N+c0)}
@@ -424,7 +436,7 @@ function burstAt(r0,c0,rad,ok,perfect){
       chainN=chainN+1;if(chainN===1)chainBase=8+Math.random()*4;const pct=chainBase+2*(chainN-1);
       let tot=0;const broke=[];armDur.forEach((d,i)=>{if(d<=0)return;Scars.armour(i,false);const hit=Math.round(foe.arm[i][2]*pct/100);armDur[i]=Math.max(0,d-hit);tot+=Math.min(d,hit);if(armDur[i]<=0)broke.push(PIECES[i])});
       if(!rage&&piece()===3){rage=true;rageQueued=true;$('stage').classList.add('rage')}
-      toast(chainN<CHAIN_MAX?'Chain '+chainN+'/'+CHAIN_MAX+': hold another force gem on your next turn for '+Math.round(pct+2)+'%. It charges a little faster.':'Chain complete! 5/5');
+      boardDirty=true;
       const f=$('foe');f.classList.remove('hit');void f.offsetWidth;f.classList.add('hit');renderFoe();
       pop('<span style="color:#ffd166">'+(chainN>1?'Chain strike x'+chainN+'!':'Perfect release!')+'</span><small>'+reds.length+' diamonds destroyed · all armour -'+Math.round(pct)+'% ('+tot+')'+(broke.length?' · '+broke.join(' and ')+' broken!':'')+'</small>');if(chainN>=CHAIN_MAX)chainN=0}
   }else floats.push({s:'Fizzle…',x:c0+.5,y:r0-.3,life:1.2});
@@ -534,7 +546,8 @@ function targets(){
 }
 let last=performance.now();
 function frame(now){
-  const dt=Math.min(.05,(now-last)/1000);last=now;const tg=targets(),kk=1-Math.exp(-dt*16);let settled=true;
+  let dt=Math.min(.05,(now-last)/1000);last=now;if(hitStop>0){hitStop-=dt;dt*=.08}
+  idleTaunt(now);const tg=targets(),kk=1-Math.exp(-dt*16);let settled=true;
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){
     const g=grid[r][c];if(!g)continue;const[tx,ty]=tg[r][c];
     if(drag&&drag.g===g&&drag.axis){g.x=tx;g.y=ty;continue}
@@ -584,6 +597,9 @@ function pullTag(g,k){const fs=Math.max(7,Math.round(cell*.16)),cx=(g.x+.5)*cell
   ctx.fillStyle='#2a0d22';ctx.fillRect(Math.round(cx-w/2),Math.round(y-h/2),Math.round(w),Math.round(h));
   ctx.strokeStyle='#d4af37';ctx.lineWidth=1;ctx.strokeRect(Math.round(cx-w/2)+.5,Math.round(y-h/2)+.5,Math.round(w)-1,Math.round(h)-1);
   ctx.fillStyle='#ffd166';ctx.fillText('PULL',cx,y+.5);ctx.restore()}
+// force-chain progress: 5 notches along the bottom of each force gem, lit for each perfect link in a row
+function chainPips(g){const x0=g.x*cell,y=(g.y+(g.jy||0))*cell+cell*.86,w=cell*.1,gap=cell*.045,tot=5*w+4*gap,sx=x0+(cell-tot)/2;
+  for(let i=0;i<5;i++){ctx.fillStyle=i<chainN?'#ffd166':'rgba(20,10,18,.75)';ctx.fillRect(Math.round(sx+i*(w+gap)),Math.round(y),Math.round(w),Math.max(2,Math.round(cell*.05)))}}
 function draw(){
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,size,size);
   for(let r=0;r<N;r++)for(let c=0;c<N;c++){ctx.fillStyle=(r+c)%2?'#1a141d':'#221a26';ctx.fillRect(c*cell,r*cell,cell+.5,cell+.5)}
@@ -617,7 +633,7 @@ function draw(){
     if(drag&&!drag.enemy&&drag.g===g&&!drag.axis&&state==='idle')s*=1.18;
     if(g.shrink!==undefined)s*=g.shrink;else if(charge&&charge.g===g&&state==='charging')s*=1+Math.sin(charge.f*40)*.05+charge.f*.15;
     if(g.t===SL&&s===1&&!g.dark){slingBands(g,tug);slings.push(g)}
-    if(s>0){const q=g.sq||0,w=cell*s*(1+q*.6),h=cell*s*(1-q),yy=(g.y+(g.jy||0)+(g.t===SL&&s===1?tug*.09:0))*cell;const wx=g.wig!==undefined?Math.sin(g.wig*50)*(1-g.wig/.35)*cell*.07:0;ctx.drawImage((g.dark?darkSprites:sprites)[g.t],g.x*cell+(cell-w)/2+wx,yy+cell-h-(cell-cell*s)/2,w,h)}}
+    if(s>0){const q=g.sq||0,w=cell*s*(1+q*.6),h=cell*s*(1-q),yy=(g.y+(g.jy||0)+(g.t===SL&&s===1?tug*.09:0))*cell;const wx=g.wig!==undefined?Math.sin(g.wig*50)*(1-g.wig/.35)*cell*.07:0;ctx.drawImage((g.dark?darkSprites:sprites)[g.t],g.x*cell+(cell-w)/2+wx,yy+cell-h-(cell-cell*s)/2,w,h);if(g.t===SP&&chainN>0&&s===1)chainPips(g)}}
   if(charge){const R1=VR*cell,m=.8*R1+6;
     const cx=Math.min(size-m,Math.max(m,(charge.c+.5)*cell)),cy=Math.min(size-m,Math.max(m,(charge.r+.5)*cell));
     const inZone=state==='charging'&&charge.f>=charge.T-PERFECT;
@@ -638,7 +654,7 @@ function draw(){
   if(top){const s=1.15;ctx.drawImage(sprites[top.t],top.x*cell-cell*(s-1)/2,top.y*cell-cell*(s-1)/2,cell*s,cell*s)}
   for(const p of parts){ctx.globalAlpha=Math.min(1,p.life*2);ctx.fillStyle=p.col;const z=p.s*cell;ctx.fillRect(Math.round(p.x*cell-z/2),Math.round(p.y*cell-z/2),Math.round(z),Math.round(z))}ctx.globalAlpha=1;
   ctx.textAlign='center';ctx.font='400 '+Math.round(cell*.36)+'px Marcellus,system-ui,sans-serif';
-  for(const f of floats){const y=Math.max(cell*.4,(f.y-(1-f.life)*.8)*cell),hw=ctx.measureText(f.s).width/2+4,fx=Math.min(size-hw,Math.max(hw,f.x*cell));ctx.globalAlpha=Math.min(1,f.life*2);ctx.lineWidth=5;ctx.strokeStyle='#2a0d22';ctx.strokeText(f.s,fx,y);ctx.fillStyle='#ffd166';ctx.fillText(f.s,fx,y);ctx.globalAlpha=1}
+  for(const f of floats){if(f.big)ctx.font='400 '+Math.round(cell*.62)+'px Marcellus,system-ui,sans-serif';const y=Math.max(cell*.4,(f.y-(1-f.life)*.8)*cell),hw=ctx.measureText(f.s).width/2+4,fx=Math.min(size-hw,Math.max(hw,f.x*cell));ctx.globalAlpha=Math.min(1,f.life*2);ctx.lineWidth=5;ctx.strokeStyle='#2a0d22';ctx.strokeText(f.s,fx,y);ctx.fillStyle=f.col||'#ffd166';ctx.fillText(f.s,fx,y);ctx.globalAlpha=1;if(f.big)ctx.font='400 '+Math.round(cell*.36)+'px Marcellus,system-ui,sans-serif'}
 }
 
 /* ---------- input ---------- */

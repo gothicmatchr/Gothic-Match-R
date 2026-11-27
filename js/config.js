@@ -16,6 +16,18 @@ const CHAIN_MAX=5,CHAIN_SPEEDUP=.06,HOLD=.28,CHARGE=1.6,VR=3.4,PERFECT=.08,PERFE
 const FALL_G=30,FALL_MAX=13,FALL_BOUNCE=.28;
 // Most moves the enemy's counter can be delayed to. Raise later to allow stacking delays.
 const MAX_TURNS=EVERY;
+// The enemy always acts after at most this many of your turns, whatever delays you stack.
+const QUIET_MAX=3;
+// Cascade chains multiply damage (x2, x3...). The enemy's chain multiplier stops at this.
+const FOE_CHAIN_MAX=2;
+// Most HP one enemy turn can take (multi-strikes and chains included), so no turn ends a battle out of nowhere.
+const TURN_CAP=45;
+// An enemy blow this big gets the heavy slam, hit-stop and a triumphant shout (once per enemy turn).
+const BIG_HIT=18;
+// Idle taunts: seconds of no input on your turn before the enemy may taunt (min, random extra).
+const IDLE_TAUNT=[14,10];
+// Enemy AI: goes for a heal only below this share of its HP, and then only this often.
+const HEAL_BELOW=.75,HEAL_CHANCE=.35;
 // Slingshot: minimum pull (in gem widths) to fire, and how far down it must go. Short pulls aim just as well; distance doesn't change power.
 const SLING_MIN_PULL=.3,SLING_MIN_DOWN=.12;
 // Match pop timing (seconds): pause after the last gem lights, swell before each burst, settle after the last burst.

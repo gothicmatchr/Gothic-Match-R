@@ -153,3 +153,9 @@ finish('snap', mix((lp(sn, 1800), 0, .9), (sweep(260, 120, .08) * env(T(.08), .0
 # SPILL: dust landing in a full bucket sparks over the rim. Tiny, high, quick: two bell ticks and a fizz.
 fz = hp(noise(.08), 5000) * env(T(.08), .001, .08)
 finish('spill', mix((bell(hz('C#7'), .12, .8, 2.0), 0, .5), (bell(hz('D7'), .12, .8, 2.0), .03, .4), (fz, 0, .15)), tail=.3)
+
+# HIT: an enemy blow lands. Heavy low thump, a dull crunch and a dark ring on D (A2/D3), short room tail.
+boom = sweep(140, 38, .32) * env(T(.32), .002, .32)
+crunch = lp(noise(.09), 2600) * env(T(.09), .0008, .09)
+ring = mix((bell(hz('D3'), .45, 1.4, 1.41), 0, .6), (bell(hz('A2'), .4, 1.2, 1.41), 0, .4))
+finish('hit', mix((boom, 0, 1), (crunch, 0, .6), (lp(ring, 1600), .005, .35)), tail=.45)
