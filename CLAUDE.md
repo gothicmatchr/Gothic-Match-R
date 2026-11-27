@@ -43,9 +43,11 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
 - `js/scars.js` — battle damage painted onto enemy skin/armour canvases.
 - `js/audio.js` — music (calm/rage crossfade), Web Audio effects, volume panel.
 - `js/game.js` — rules, board, effects, input, UI.
-- `audio/` — two battle themes, each a calm + rage pair (same 48-bar loop, synced): `battle_theme*.ogg`
-  (170 BPM) and `battle_theme2*.ogg` (176 BPM, "Rook's Requiem"). One theme is picked at random each
-  battle (`Music.setTrack`). `sfx/*.ogg`.
+- `audio/` — battle themes, each a calm + rage pair of the same length, synced bar for bar:
+  `battle_theme*.ogg` (original, 170 BPM, 48 bars), `battle_theme2*.ogg` (Varro's theme, 176 BPM, 48 bars),
+  `battle_theme3*.ogg` (Sister Morwen's theme, 140 BPM, 96 bars ≈ 2:45, softer and atmospheric).
+  A battle starts on the enemy's `theme` (index into `TRACKS` in audio.js; random if none); when a track
+  ends the next one plays, cycling through the list, staying on rage versions while raging. `sfx/*.ogg`.
 - `tools/music/` — MIDI sources and Python generators for all audio (see below).
 - `tools/tests/` — headless Playwright stress bot and performance test (see below).
 
@@ -144,6 +146,10 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
   synthesises classic breakcore drums (Amen-style 4-bar break, Think-style break; 3-3-2 chops, machine-gun
   snares, snare rushes to 64ths, reversed hits, half-speed drops, bitcrush, gabber 4/4 under amen chops at
   the peak). No samples. Writes `audio/battle_theme2*.ogg`; intermediates go to `tools/music/build/`.
+- Morwen's theme: `make_gothic3.py` (cello lead, music box, harp, choir, tubular bells, reed organ; Dm | Dm/C |
+  Bbmaj7 | Asus4-A7 | Gm | Dm/F | Em7b5 | A7b9, two bars each) + `make_rage3.py` → `make_breakcore3.py` (soft,
+  lowpassed Think/Amen breaks with gentle edits, half-speed heartbeat in the breakdown, vinyl crackle and soft
+  rain bed; the rage version is harder). Writes `audio/battle_theme3*.ogg` at 80 kbps.
 - `synth_sfx.py` synthesises the match-3 style effects into `audio/sfx/*.ogg`
   (`python3 synth_sfx.py name …` renders only those).
 - Needs: python3, numpy, scipy, mido, fluidsynth, ffmpeg, a GM `.sf2` soundfont

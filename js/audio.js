@@ -11,10 +11,13 @@ const Vol=(()=>{let bgm=.8,sfx=.8;
 let audioUnlocked=false;
 
 const Music=(()=>{
-  // Battle themes: [calm, rage] pairs of the same length, synced bar for bar. One is picked at random each battle.
-  const TRACKS=[['audio/battle_theme.ogg','audio/battle_theme_rage.ogg'],['audio/battle_theme2.ogg','audio/battle_theme2_rage.ogg']];
+  // Battle themes: [calm, rage] pairs of the same length, synced bar for bar. A battle starts on the enemy's own
+  // theme (or a random one); when a track ends the next one plays, cycling through the list.
+  // 0: original theme, 1: Varro's theme, 2: Sister Morwen's theme.
+  const TRACKS=[['audio/battle_theme.ogg','audio/battle_theme_rage.ogg'],['audio/battle_theme2.ogg','audio/battle_theme2_rage.ogg'],
+    ['audio/battle_theme3.ogg','audio/battle_theme3_rage.ogg']];
   let ti=Math.floor(Math.random()*TRACKS.length);
-  const mk=src=>{const a=new Audio(src);a.loop=true;a.preload='auto';a.volume=0;return a};
+  const mk=src=>{const a=new Audio(src);a.preload='auto';a.volume=0;a.addEventListener('ended',()=>{if(a===cur)next()});return a};
   const calm=mk(TRACKS[ti][0]),rageEl=mk(TRACKS[ti][1]);
   const VOL=.42,FADE=2.5;
   let cur=calm,mixT=0,fading=null,raging=false;  // mixT: 0 = calm, 1 = rage
@@ -35,9 +38,11 @@ const Music=(()=>{
   // Follow the game's rage flag (declared in game.js, shared global scope).
   setInterval(()=>{let r=false;try{r=!!rage&&state!=='over'}catch(e){}setRage(r)},300);
   // switch theme (at battle start): both versions change together and start from the top, calm
-  function setTrack(i){if(i===ti)return;ti=i;const was=on()&&!cur.paused;clearInterval(fading);fading=null;stop();
-    calm.src=TRACKS[i][0];rageEl.src=TRACKS[i][1];raging=false;mixT=0;cur=calm;apply();if(was)play()}
-  return{play,stop,apply,setRage,setTrack,get count(){return TRACKS.length},get track(){return ti},get playing(){return !cur.paused},get time(){return cur.currentTime},get rage(){return raging},get mix(){return mixT}};
+  // switch theme: both versions change together and start from the top. keepRage: stay on the rage version
+  function setTrack(i,keepRage){if(i===ti&&!keepRage)return;ti=i;const was=on()&&(!cur.paused||keepRage);clearInterval(fading);fading=null;stop();
+    calm.src=TRACKS[i][0];rageEl.src=TRACKS[i][1];if(!keepRage)raging=false;mixT=raging?1:0;cur=raging?rageEl:calm;apply();if(was)play()}
+  function next(){setTrack((ti+1)%TRACKS.length,true)}
+  return{play,stop,apply,setRage,setTrack,next,get el(){return cur},get count(){return TRACKS.length},get track(){return ti},get playing(){return !cur.paused},get time(){return cur.currentTime},get rage(){return raging},get mix(){return mixT}};
 })();
 
 const Sfx=(()=>{
