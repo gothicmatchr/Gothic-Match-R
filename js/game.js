@@ -67,7 +67,12 @@ function renderMe(){$('vbMe').classList.toggle('warded',!!ward);{const at=$('amm
   {const pct=hp/MAXHP*100;$('meBar').style.height=pct+'%';$('meGhost').style.height=pct+'%';barPulse('vbMe',hp,'lm')}$('meHp').textContent=hp+' / '+MAXHP;
   const f=hp/MAXHP;[...$('pips').children].forEach((p,i)=>p.classList.toggle('off',f<=TH[i]));
 }
-function renderGauges(){$('gauges').querySelectorAll('.g').forEach((b,j)=>{const t=ATK[j];b.querySelector('i').style.width=(gauge[t]/GEMS[t].cap*100)+'%';b.classList.toggle('full',gauge[t]>=GEMS[t].cap)})}
+// gauge[] is the bucket's true total (set when a match scores); shown[] is what the bar shows and fills only
+// as gem dust lands in the bucket. A bucket can be fired once its bar is visibly full.
+let shown=Array(TYPES).fill(0),gaugeWait=Array(TYPES).fill(0),gq=[[],[],[],[],[],[]];// gq: value of each scored gem still to burst, per type
+const ready=t=>shown[t]>=GEMS[t].cap;
+function renderGauges(){for(const t of ATK){if(shown[t]>gauge[t])shown[t]=gauge[t]}
+  $('gauges').querySelectorAll('.g').forEach((b,j)=>{const t=ATK[j];b.querySelector('i').style.width=(shown[t]/GEMS[t].cap*100)+'%';b.classList.toggle('full',ready(t))})}
 function addMoney(d){money=Math.max(0,money+d);hud();try{localStorage.setItem('gemslide-gold',money)}catch(e){}}
 function hud(){$('money').textContent=money}
 function pop(html,side){side=side||'me';const fd=$('feed-'+side);while(fd.children.length>=4)fd.lastChild.remove();const d=document.createElement('div');d.className='pop';d.innerHTML=html;fd.prepend(d)}
@@ -136,7 +141,7 @@ function resolve(gs,bonus,x,y,isMatch,mult,healGreens){mult=mult||1;
   if(isMatch&&reds){
     hurtMe(reds*foe.hit,'Diamonds burn you',true);power+=reds;
   }
-  if(!noGauge)for(const t of ATK)gauge[t]=Math.min(GEMS[t].cap,gauge[t]+add[t]*mult);
+  if(!noGauge){for(const t of ATK)gauge[t]=Math.min(GEMS[t].cap,gauge[t]+add[t]*mult);for(const g of gs)if(ATK.includes(g.t)&&gq[g.t].length<60)gq[g.t].push(GEMS[g.t].pts*mult)}
   renderGauges();renderFoe();hud();
 }
 function afterTurn(){
@@ -297,7 +302,7 @@ function fill(){
   do{grid=[];for(let r=0;r<N;r++){grid.push([]);for(let c=0;c<N;c++){let t;do{t=rnd()}while((c>1&&grid[r][c-1].t===t&&grid[r][c-2].t===t)||(r>1&&grid[r-1][c].t===t&&grid[r-2][c].t===t));grid[r].push(gem(t,c,r-N-1))}}}while(!hasMove()&&Math.random()<.999);
 }
 function battle(){
-  foe=FOES[fi];foeHp=foe.hp;hp=MAXHP;turns=EVERY;cursed=false;curseNow=false;gauge=Array(TYPES).fill(0);power=0;pendingTurn=false;battleScore=score;
+  foe=FOES[fi];foeHp=foe.hp;hp=MAXHP;turns=EVERY;cursed=false;curseNow=false;gauge=Array(TYPES).fill(0);shown=Array(TYPES).fill(0);gq=[[],[],[],[],[],[]];gaugeWait=Array(TYPES).fill(0);power=0;pendingTurn=false;battleScore=score;
   ammo=0;$('prompt').hidden=true;phase='player';forges=[];popExtra=0;delayQ=0;ward=0;lackeyQ=false;arrow=null;em=null;slashes=[];fxp=[];rings=[];preview=null;$('lackey').classList.remove('on','shoot');$('speech').classList.remove('on');sayT=0;noGauge=false;rage=false;charge=null;proj=null;chainN=0;replay=null;boxParts=[];dust=[];parts=[];rageQueued=false;armDur=foe.arm.map(a=>a[2]);rq=null;hl=null;combo=0;drag=null;floats=[];lastMoved=null;
   $('foe').className='';buildFoe(foe);clearLog();lowSaid=false;setTimeout(()=>say('intro',true),700);$('stage').classList.remove('rage');
   $('over').classList.remove('on');fill();if(TEST_SLINGS)[[6,1],[6,3],[6,5]].forEach(([r,c])=>grid[r][c].t=SL);state='falling';renderFoe();renderMe();renderGauges();hud();
@@ -340,25 +345,28 @@ const popEnd=()=>popExtra*2+(LIGHT_HOLD+SWELL+POST)*pk();
 let boxParts=[];
 let dust=[];
 function burstCell(gx,gy,t,big,noBucket,blast){
-  const br=cv.getBoundingClientRect(),sx=br.left+(gx+.5)*cell,sy=br.top+(gy+.5)*cell,col=COLORS[t],n=Math.round((blast?38:big?30:24)*(lowFx?.5:1));
+  const br=cv.getBoundingClientRect(),sx=br.left+(gx+.5)*cell,sy=br.top+(gy+.5)*cell,col=COLORS[t],n=Math.round((blast?38:big?30:24)*(lowFx?.5:1)),gv=!noBucket&&phase!=='enemy'&&gq[t]&&gq[t].length?gq[t].shift():0;
   let tx,ty,bucket=null;
   if(!noBucket&&phase!=='enemy'&&ATK.includes(t)){bucket=$('gauges').children[ATK.indexOf(t)];const r=bucket.getBoundingClientRect();tx=r.left+r.width/2;ty=r.top+r.height*.55}
   else{tx=sx;ty=br.bottom-6}
   for(let i=0;i<n;i++){const a=-Math.PI*(.15+.7*Math.random()),v=cell*(2+Math.random()*4);
     if(dust.length>=PCAP())break;dust.push({x:sx+(Math.random()-.5)*cell*.4,y:sy+(Math.random()-.5)*cell*.4,vx:Math.cos(a)*v*(Math.random()<.5?-1:1),vy:Math.sin(a)*v,
-      s:Math.max(2,cell*(.06+Math.random()*.06)),col:i%5===0?'#ffffff':col[Math.floor(Math.random()*3)],tx:tx+(Math.random()-.5)*(bucket?cell*.8:cell*.9),ty,bucket,
+      s:Math.max(2,cell*(.06+Math.random()*.06)),col:i%5===0?'#ffffff':col[Math.floor(Math.random()*3)],tx:tx+(Math.random()-.5)*(bucket?cell*.8:cell*.9),ty,bucket,bt:bucket?t:-1,v:gv/n,
       delay:Math.random()*.12,life:3,settled:false});
     if(blast){const p=dust[dust.length-1],bx=br.left+blast.x*cell,by=br.top+blast.y*cell;let dx=sx-bx,dy=sy-by;const L=Math.hypot(dx,dy)||1;
       const a=Math.atan2(dy/L,dx/L)+(Math.random()-.5)*(L<2?6.28:1.3),v=cell*(7+Math.random()*8);p.vx=Math.cos(a)*v;p.vy=Math.sin(a)*v-cell*2;p.delay=Math.random()*.04;p.free=.3+Math.random()*.15;p.life=3.4}}
 }
 function dustTick(dt){
-  const g=cell*16;
+  const g=cell*16,fly=Array(TYPES).fill(0);let gd=false;for(const p of dust)if(p.bucket&&p.life>0)fly[p.bt]++;
   for(const p of dust){if(p.delay>0){p.delay-=dt;continue}p.life-=dt;if(p.settled){continue}
     if(p.free>0){p.free-=dt;p.vy+=g*.3*dt;const dr=Math.exp(-dt*3);p.vx*=dr;p.vy*=dr;p.x+=p.vx*dt;p.y+=p.vy*dt;continue}
     p.vy+=g*dt;p.vx+=((p.tx-p.x)*6-p.vx*2.2)*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;
-    if(p.y>=p.ty){if(p.bucket){p.life=0;if(!p.bucket._sip||performance.now()-p.bucket._sip>120){p.bucket._sip=performance.now();p.bucket.classList.remove('sip');void p.bucket.offsetWidth;p.bucket.classList.add('sip')}}
+    if(p.y>=p.ty){if(p.bucket){p.life=0;const t=p.bt;if(shown[t]<gauge[t]){shown[t]+=p.v||(gauge[t]-shown[t])/Math.max(1,fly[t]);gd=true}fly[t]--;if(!p.bucket._sip||performance.now()-p.bucket._sip>120){p.bucket._sip=performance.now();p.bucket.classList.remove('sip');void p.bucket.offsetWidth;p.bucket.classList.add('sip')}}
       else{p.y=p.ty-Math.random()*cell*.15;p.vy=0;p.vx=0;p.settled=true;p.life=Math.min(p.life,.7)}}}
   dust=dust.filter(p=>p.life>0);
+  // safety net: if a bucket's total is ahead of its bar with no dust on the way for 1.5 s, catch up
+  for(const t of ATK){if(shown[t]<gauge[t]&&!fly[t]){gaugeWait[t]+=dt;if(gaugeWait[t]>1.5){shown[t]=gauge[t];gd=true}}else gaugeWait[t]=0}
+  if(gd)renderGauges();
 }
 function boxTick(dt){for(const p of boxParts){p.life-=dt;if(p.settled)continue;p.vy+=14*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;
     if(p.x<p.x0+p.s/2){p.x=p.x0+p.s/2;p.vx=-p.vx*.45}if(p.x>p.x1-p.s/2){p.x=p.x1-p.s/2;p.vx=-p.vx*.45}
@@ -645,10 +653,10 @@ icons=[0,1,2,3,4,5].map(t=>gemCanvas(t,64).toDataURL());
 $('pwIcon').src=icons[RED];
 $('gauges').innerHTML=ATK.map(t=>`<button class="g" aria-label="${GEMS[t].n} gauge"><img src="${icons[t]}" alt=""><div class="bar"><i></i></div></button>`).join('');
 $('gauges').querySelectorAll('.g').forEach((b,j)=>b.addEventListener('click',()=>{const t=ATK[j],G=GEMS[t];
-    if(t===STAR&&state==='select'){gauge[t]=G.cap;state='idle';$('prompt').hidden=true;renderGauges();toast('Star power put away.');return}
-    if(gauge[t]>=G.cap&&state==='idle'&&!locked){gauge[t]=0;if(t===STAR)startSelect();else fire(t);
+    if(t===STAR&&state==='select'){gauge[t]=shown[t]=G.cap;state='idle';$('prompt').hidden=true;renderGauges();toast('Star power put away.');return}
+    if(ready(t)&&state==='idle'&&!locked){gauge[t]=shown[t]=0;gq[t]=[];if(t===STAR)startSelect();else fire(t);
     if(t===4){ammo++;renderMe();pop('<span style="color:#7ff5e1">Piercing shot loaded!</span><small>Your next slingshot can hit any armour piece</small>')}
     if(t===1){ward=1;renderMe();pop('<span style="color:#8fc8ff">Warded!</span><small>The next enemy attack is blocked</small>')}
     if(t===3){money+=15;hud();try{localStorage.setItem('gemslide-gold',money)}catch(e){}pop('<span style="color:#d4af37">+15 gold</span><small>Coin bucket emptied</small>')}const hl=Math.min(Math.round(roundMax*.2),MAXHP-hp);if(hl>0){hp+=hl;renderMe();pop('<span style="color:#5fbf72">+'+hl+' HP</span><small>Bucket emptied</small>')}renderGauges();if(foeHp<=0)win();else if(rageQueued){rageQueued=false;startRage()}return}
-  toast(G.n+' ('+G.pts+' pts per gem) → '+G.atk+': '+G.fx+'. Firing also heals you 20%.'+(gauge[t]>=G.cap?' Ready, tap to fire on your turn':''))}));
+  toast(G.n+' ('+G.pts+' pts per gem) → '+G.atk+': '+G.fx+'. Firing also heals you 20%.'+(ready(t)?' Ready, tap to fire on your turn':''))}));
 const ro=new ResizeObserver(resize);ro.observe(cv);resize();sizeFx();battle();requestAnimationFrame(frame);

@@ -23,6 +23,11 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
   procedural pixel art drawn from Path2D shapes (see `js/art.js`).
 - **Audio style:** gothic atmospheric lofi breakcore in D harmonic minor. Keep this theme
   for all music and effects (see `tools/music`).
+- **Visual signposting over written guidance.** Show cause and effect on screen (e.g. bucket bars
+  fill only as gem dust lands in them). Keep text tutorials and explanatory toasts to a minimum; the
+  game does not explain every mechanic, and discovering tricks (like chaining force gems) is part of
+  the fun. When a change could teach through motion, colour or sound instead of words, prefer that,
+  and suggest better ways to Jamil when you see them.
 - Ask Jamil before guessing on gameplay rules that are ambiguous. He prefers short, factual
   answers, no "Title: description" bullet formatting.
 - `TEST_SLINGS=true` in `js/config.js` places 3 test slingshots at battle start. **Switch off
@@ -67,7 +72,8 @@ to `main`, and tell him the build is live at https://gothicmatchr.github.io/Goth
   body blow. Pushes force gems aside. No gravity. Specials can't destroy each other.
   Cue: a small "PULL" tag on its top edge (in the gap between gems) and a tug every 3.2 s
   (orb dips on two bands and springs back inside its cell; only while idle).
-- Buckets fill from gem dust; tap to fire; each heals 20% of round max HP.
+- Buckets fill from gem dust: the bar rises only as dust lands (`shown[]`; `gauge[]` is the true
+  total, 1.5 s catch-up if no dust arrives); fire once the bar is visibly full; tap to fire; each heals 20% of round max HP.
   Shield: also a Ward that blocks the next enemy attack. Coin: also +15 gold.
   Square: also loads a stacking **Piercing shot** — next slingshot can hit any intact armour
   piece; a later piece is damaged but can't break before its turn (stops at 1).

@@ -20,13 +20,13 @@
    pop('<span style="color:#c8a070">'+LACKEY.name+' the archer!</span><small>Varro summons his lackey</small>','foe');
 @@ -571,3 +571,15 @@
      if(t===3){money+=15;hud();try{localStorage.setItem('gemslide-gold',money)}catch(e){}pop('<span style="color:#d4af37">+15 gold</span><small>Coin bucket emptied</small>')}const hl=Math.min(Math.round(roundMax*.2),MAXHP-hp);if(hl>0){hp+=hl;renderMe();pop('<span style="color:#5fbf72">+'+hl+' HP</span><small>Bucket emptied</small>')}renderGauges();if(foeHp<=0)win();else if(rageQueued){rageQueued=false;startRage()}return}
-   toast(G.n+' ('+G.pts+' pts per gem) → '+G.atk+': '+G.fx+'. Firing also heals you 20%.'+(gauge[t]>=G.cap?' Ready, tap to fire on your turn':''))}));
+   toast(G.n+' ('+G.pts+' pts per gem) → '+G.atk+': '+G.fx+'. Firing also heals you 20%.'+(ready(t)?' Ready, tap to fire on your turn':''))}));
  const ro=new ResizeObserver(resize);ro.observe(cv);resize();sizeFx();battle();requestAnimationFrame(frame);
 +
 +window.__api={get s(){return {state,phase,turns,hp,foeHp,fi,locked,piece:piece(),gauge:gauge.slice(),money,ward,power,pt:window.__pt||0,lk:window.__lk||0}},
 + act(){if(state!=='idle'||locked)return 'wait';const R=Math.random();
 +  // fire a full gauge sometimes
-+  for(const t of ATK)if(gauge[t]>=GEMS[t].cap&&R<.5){$('gauges').children[ATK.indexOf(t)].click();return 'gauge'}
++  for(const t of ATK)if(ready(t)&&R<.5){$('gauges').children[ATK.indexOf(t)].click();return 'gauge'}
 +  const sl=[],sp=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(grid[r][c].t===SL)sl.push([r,c]);if(grid[r][c].t===SP)sp.push([r,c])}
 +  if(sl.length&&R<.25){const[r,c]=sl[0];fireSling({r,c,g:grid[r][c],px:(Math.random()-.5)*cell,py:cell*1.5});return 'sling'}
 +  if(sp.length&&R<.4){const[r,c]=sp[0];if(Math.random()<.5)burstAt(r,c,1,'tap');else{const f=Math.random()*.85;burstAt(r,c,burstSize(f),true,f>.68&&f<.78)}return 'gold'}
